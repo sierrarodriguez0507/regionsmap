@@ -1,0 +1,1520 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>html,body{margin:0;padding:0}body{font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Colorado Turf Finder</title>
+<meta name="description" content="Search Colorado congressional, state senate and state house districts, campaign regions and teams.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Arvo:wght@400;700&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<style>
+/* required styles */
+
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-container,
+.leaflet-pane > svg,
+.leaflet-pane > canvas,
+.leaflet-zoom-box,
+.leaflet-image-layer,
+.leaflet-layer {
+	position: absolute;
+	left: 0;
+	top: 0;
+	}
+.leaflet-container {
+	overflow: hidden;
+	}
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	-webkit-user-select: none;
+	   -moz-user-select: none;
+	        user-select: none;
+	  -webkit-user-drag: none;
+	}
+/* Prevents IE11 from highlighting tiles in blue */
+.leaflet-tile::selection {
+	background: transparent;
+}
+/* Safari renders non-retina tile on retina better with this, but Chrome is worse */
+.leaflet-safari .leaflet-tile {
+	image-rendering: -webkit-optimize-contrast;
+	}
+/* hack that prevents hw layers "stretching" when loading new tiles */
+.leaflet-safari .leaflet-tile-container {
+	width: 1600px;
+	height: 1600px;
+	-webkit-transform-origin: 0 0;
+	}
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	display: block;
+	}
+/* .leaflet-container svg: reset svg max-width decleration shipped in Joomla! (joomla.org) 3.x */
+/* .leaflet-container img: map is broken in FF if you have max-width: 100% on tiles */
+.leaflet-container .leaflet-overlay-pane svg {
+	max-width: none !important;
+	max-height: none !important;
+	}
+.leaflet-container .leaflet-marker-pane img,
+.leaflet-container .leaflet-shadow-pane img,
+.leaflet-container .leaflet-tile-pane img,
+.leaflet-container img.leaflet-image-layer,
+.leaflet-container .leaflet-tile {
+	max-width: none !important;
+	max-height: none !important;
+	width: auto;
+	padding: 0;
+	}
+
+.leaflet-container img.leaflet-tile {
+	/* See: https://bugs.chromium.org/p/chromium/issues/detail?id=600120 */
+	mix-blend-mode: plus-lighter;
+}
+
+.leaflet-container.leaflet-touch-zoom {
+	-ms-touch-action: pan-x pan-y;
+	touch-action: pan-x pan-y;
+	}
+.leaflet-container.leaflet-touch-drag {
+	-ms-touch-action: pinch-zoom;
+	/* Fallback for FF which doesn't support pinch-zoom */
+	touch-action: none;
+	touch-action: pinch-zoom;
+}
+.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom {
+	-ms-touch-action: none;
+	touch-action: none;
+}
+.leaflet-container {
+	-webkit-tap-highlight-color: transparent;
+}
+.leaflet-container a {
+	-webkit-tap-highlight-color: rgba(51, 181, 229, 0.4);
+}
+.leaflet-tile {
+	filter: inherit;
+	visibility: hidden;
+	}
+.leaflet-tile-loaded {
+	visibility: inherit;
+	}
+.leaflet-zoom-box {
+	width: 0;
+	height: 0;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	z-index: 800;
+	}
+/* workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=888319 */
+.leaflet-overlay-pane svg {
+	-moz-user-select: none;
+	}
+
+.leaflet-pane         { z-index: 400; }
+
+.leaflet-tile-pane    { z-index: 200; }
+.leaflet-overlay-pane { z-index: 400; }
+.leaflet-shadow-pane  { z-index: 500; }
+.leaflet-marker-pane  { z-index: 600; }
+.leaflet-tooltip-pane   { z-index: 650; }
+.leaflet-popup-pane   { z-index: 700; }
+
+.leaflet-map-pane canvas { z-index: 100; }
+.leaflet-map-pane svg    { z-index: 200; }
+
+.leaflet-vml-shape {
+	width: 1px;
+	height: 1px;
+	}
+.lvml {
+	behavior: url(#default#VML);
+	display: inline-block;
+	position: absolute;
+	}
+
+
+/* control positioning */
+
+.leaflet-control {
+	position: relative;
+	z-index: 800;
+	pointer-events: visiblePainted; /* IE 9-10 doesn't have auto */
+	pointer-events: auto;
+	}
+.leaflet-top,
+.leaflet-bottom {
+	position: absolute;
+	z-index: 1000;
+	pointer-events: none;
+	}
+.leaflet-top {
+	top: 0;
+	}
+.leaflet-right {
+	right: 0;
+	}
+.leaflet-bottom {
+	bottom: 0;
+	}
+.leaflet-left {
+	left: 0;
+	}
+.leaflet-control {
+	float: left;
+	clear: both;
+	}
+.leaflet-right .leaflet-control {
+	float: right;
+	}
+.leaflet-top .leaflet-control {
+	margin-top: 10px;
+	}
+.leaflet-bottom .leaflet-control {
+	margin-bottom: 10px;
+	}
+.leaflet-left .leaflet-control {
+	margin-left: 10px;
+	}
+.leaflet-right .leaflet-control {
+	margin-right: 10px;
+	}
+
+
+/* zoom and fade animations */
+
+.leaflet-fade-anim .leaflet-popup {
+	opacity: 0;
+	-webkit-transition: opacity 0.2s linear;
+	   -moz-transition: opacity 0.2s linear;
+	        transition: opacity 0.2s linear;
+	}
+.leaflet-fade-anim .leaflet-map-pane .leaflet-popup {
+	opacity: 1;
+	}
+.leaflet-zoom-animated {
+	-webkit-transform-origin: 0 0;
+	    -ms-transform-origin: 0 0;
+	        transform-origin: 0 0;
+	}
+svg.leaflet-zoom-animated {
+	will-change: transform;
+}
+
+.leaflet-zoom-anim .leaflet-zoom-animated {
+	-webkit-transition: -webkit-transform 0.25s cubic-bezier(0,0,0.25,1);
+	   -moz-transition:    -moz-transform 0.25s cubic-bezier(0,0,0.25,1);
+	        transition:         transform 0.25s cubic-bezier(0,0,0.25,1);
+	}
+.leaflet-zoom-anim .leaflet-tile,
+.leaflet-pan-anim .leaflet-tile {
+	-webkit-transition: none;
+	   -moz-transition: none;
+	        transition: none;
+	}
+
+.leaflet-zoom-anim .leaflet-zoom-hide {
+	visibility: hidden;
+	}
+
+
+/* cursors */
+
+.leaflet-interactive {
+	cursor: pointer;
+	}
+.leaflet-grab {
+	cursor: -webkit-grab;
+	cursor:    -moz-grab;
+	cursor:         grab;
+	}
+.leaflet-crosshair,
+.leaflet-crosshair .leaflet-interactive {
+	cursor: crosshair;
+	}
+.leaflet-popup-pane,
+.leaflet-control {
+	cursor: auto;
+	}
+.leaflet-dragging .leaflet-grab,
+.leaflet-dragging .leaflet-grab .leaflet-interactive,
+.leaflet-dragging .leaflet-marker-draggable {
+	cursor: move;
+	cursor: -webkit-grabbing;
+	cursor:    -moz-grabbing;
+	cursor:         grabbing;
+	}
+
+/* marker & overlays interactivity */
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-image-layer,
+.leaflet-pane > svg path,
+.leaflet-tile-container {
+	pointer-events: none;
+	}
+
+.leaflet-marker-icon.leaflet-interactive,
+.leaflet-image-layer.leaflet-interactive,
+.leaflet-pane > svg path.leaflet-interactive,
+svg.leaflet-image-layer.leaflet-interactive path {
+	pointer-events: visiblePainted; /* IE 9-10 doesn't have auto */
+	pointer-events: auto;
+	}
+
+/* visual tweaks */
+
+.leaflet-container {
+	background: #ddd;
+	outline-offset: 1px;
+	}
+.leaflet-container a {
+	color: #0078A8;
+	}
+.leaflet-zoom-box {
+	border: 2px dotted #38f;
+	background: rgba(255,255,255,0.5);
+	}
+
+
+/* general typography */
+.leaflet-container {
+	font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	font-size: 0.75rem;
+	line-height: 1.5;
+	}
+
+
+/* general toolbar styles */
+
+.leaflet-bar {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+	border-radius: 4px;
+	}
+.leaflet-bar a {
+	background-color: #fff;
+	border-bottom: 1px solid #ccc;
+	width: 26px;
+	height: 26px;
+	line-height: 26px;
+	display: block;
+	text-align: center;
+	text-decoration: none;
+	color: black;
+	}
+.leaflet-bar a,
+.leaflet-control-layers-toggle {
+	background-position: 50% 50%;
+	background-repeat: no-repeat;
+	display: block;
+	}
+.leaflet-bar a:hover,
+.leaflet-bar a:focus {
+	background-color: #f4f4f4;
+	}
+.leaflet-bar a:first-child {
+	border-top-left-radius: 4px;
+	border-top-right-radius: 4px;
+	}
+.leaflet-bar a:last-child {
+	border-bottom-left-radius: 4px;
+	border-bottom-right-radius: 4px;
+	border-bottom: none;
+	}
+.leaflet-bar a.leaflet-disabled {
+	cursor: default;
+	background-color: #f4f4f4;
+	color: #bbb;
+	}
+
+.leaflet-touch .leaflet-bar a {
+	width: 30px;
+	height: 30px;
+	line-height: 30px;
+	}
+.leaflet-touch .leaflet-bar a:first-child {
+	border-top-left-radius: 2px;
+	border-top-right-radius: 2px;
+	}
+.leaflet-touch .leaflet-bar a:last-child {
+	border-bottom-left-radius: 2px;
+	border-bottom-right-radius: 2px;
+	}
+
+/* zoom control */
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+	font: bold 18px 'Lucida Console', Monaco, monospace;
+	text-indent: 1px;
+	}
+
+.leaflet-touch .leaflet-control-zoom-in, .leaflet-touch .leaflet-control-zoom-out  {
+	font-size: 22px;
+	}
+
+
+/* layers control */
+
+.leaflet-control-layers {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+	background: #fff;
+	border-radius: 5px;
+	}
+.leaflet-control-layers-toggle {
+	background-image: url(images/layers.png);
+	width: 36px;
+	height: 36px;
+	}
+.leaflet-retina .leaflet-control-layers-toggle {
+	background-image: url(images/layers-2x.png);
+	background-size: 26px 26px;
+	}
+.leaflet-touch .leaflet-control-layers-toggle {
+	width: 44px;
+	height: 44px;
+	}
+.leaflet-control-layers .leaflet-control-layers-list,
+.leaflet-control-layers-expanded .leaflet-control-layers-toggle {
+	display: none;
+	}
+.leaflet-control-layers-expanded .leaflet-control-layers-list {
+	display: block;
+	position: relative;
+	}
+.leaflet-control-layers-expanded {
+	padding: 6px 10px 6px 6px;
+	color: #333;
+	background: #fff;
+	}
+.leaflet-control-layers-scrollbar {
+	overflow-y: scroll;
+	overflow-x: hidden;
+	padding-right: 5px;
+	}
+.leaflet-control-layers-selector {
+	margin-top: 2px;
+	position: relative;
+	top: 1px;
+	}
+.leaflet-control-layers label {
+	display: block;
+	font-size: 13px;
+	font-size: 1.08333em;
+	}
+.leaflet-control-layers-separator {
+	height: 0;
+	border-top: 1px solid #ddd;
+	margin: 5px -10px 5px -6px;
+	}
+
+/* Default icon URLs */
+.leaflet-default-icon-path { /* used only in path-guessing heuristic, see L.Icon.Default */
+	background-image: url(images/marker-icon.png);
+	}
+
+
+/* attribution and scale controls */
+
+.leaflet-container .leaflet-control-attribution {
+	background: #fff;
+	background: rgba(255, 255, 255, 0.8);
+	margin: 0;
+	}
+.leaflet-control-attribution,
+.leaflet-control-scale-line {
+	padding: 0 5px;
+	color: #333;
+	line-height: 1.4;
+	}
+.leaflet-control-attribution a {
+	text-decoration: none;
+	}
+.leaflet-control-attribution a:hover,
+.leaflet-control-attribution a:focus {
+	text-decoration: underline;
+	}
+.leaflet-attribution-flag {
+	display: inline !important;
+	vertical-align: baseline !important;
+	width: 1em;
+	height: 0.6669em;
+	}
+.leaflet-left .leaflet-control-scale {
+	margin-left: 5px;
+	}
+.leaflet-bottom .leaflet-control-scale {
+	margin-bottom: 5px;
+	}
+.leaflet-control-scale-line {
+	border: 2px solid #777;
+	border-top: none;
+	line-height: 1.1;
+	padding: 2px 5px 1px;
+	white-space: nowrap;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	background: rgba(255, 255, 255, 0.8);
+	text-shadow: 1px 1px #fff;
+	}
+.leaflet-control-scale-line:not(:first-child) {
+	border-top: 2px solid #777;
+	border-bottom: none;
+	margin-top: -2px;
+	}
+.leaflet-control-scale-line:not(:first-child):not(:last-child) {
+	border-bottom: 2px solid #777;
+	}
+
+.leaflet-touch .leaflet-control-attribution,
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	box-shadow: none;
+	}
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	border: 2px solid rgba(0,0,0,0.2);
+	background-clip: padding-box;
+	}
+
+
+/* popup */
+
+.leaflet-popup {
+	position: absolute;
+	text-align: center;
+	margin-bottom: 20px;
+	}
+.leaflet-popup-content-wrapper {
+	padding: 1px;
+	text-align: left;
+	border-radius: 12px;
+	}
+.leaflet-popup-content {
+	margin: 13px 24px 13px 20px;
+	line-height: 1.3;
+	font-size: 13px;
+	font-size: 1.08333em;
+	min-height: 1px;
+	}
+.leaflet-popup-content p {
+	margin: 17px 0;
+	margin: 1.3em 0;
+	}
+.leaflet-popup-tip-container {
+	width: 40px;
+	height: 20px;
+	position: absolute;
+	left: 50%;
+	margin-top: -1px;
+	margin-left: -20px;
+	overflow: hidden;
+	pointer-events: none;
+	}
+.leaflet-popup-tip {
+	width: 17px;
+	height: 17px;
+	padding: 1px;
+
+	margin: -10px auto 0;
+	pointer-events: auto;
+
+	-webkit-transform: rotate(45deg);
+	   -moz-transform: rotate(45deg);
+	    -ms-transform: rotate(45deg);
+	        transform: rotate(45deg);
+	}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+	background: white;
+	color: #333;
+	box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+	}
+.leaflet-container a.leaflet-popup-close-button {
+	position: absolute;
+	top: 0;
+	right: 0;
+	border: none;
+	text-align: center;
+	width: 24px;
+	height: 24px;
+	font: 16px/24px Tahoma, Verdana, sans-serif;
+	color: #757575;
+	text-decoration: none;
+	background: transparent;
+	}
+.leaflet-container a.leaflet-popup-close-button:hover,
+.leaflet-container a.leaflet-popup-close-button:focus {
+	color: #585858;
+	}
+.leaflet-popup-scrolled {
+	overflow: auto;
+	}
+
+.leaflet-oldie .leaflet-popup-content-wrapper {
+	-ms-zoom: 1;
+	}
+.leaflet-oldie .leaflet-popup-tip {
+	width: 24px;
+	margin: 0 auto;
+
+	-ms-filter: "progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678)";
+	filter: progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678);
+	}
+
+.leaflet-oldie .leaflet-control-zoom,
+.leaflet-oldie .leaflet-control-layers,
+.leaflet-oldie .leaflet-popup-content-wrapper,
+.leaflet-oldie .leaflet-popup-tip {
+	border: 1px solid #999;
+	}
+
+
+/* div icon */
+
+.leaflet-div-icon {
+	background: #fff;
+	border: 1px solid #666;
+	}
+
+
+/* Tooltip */
+/* Base styles for the element that has a tooltip */
+.leaflet-tooltip {
+	position: absolute;
+	padding: 6px;
+	background-color: #fff;
+	border: 1px solid #fff;
+	border-radius: 3px;
+	color: #222;
+	white-space: nowrap;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	pointer-events: none;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+	}
+.leaflet-tooltip.leaflet-interactive {
+	cursor: pointer;
+	pointer-events: auto;
+	}
+.leaflet-tooltip-top:before,
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	position: absolute;
+	pointer-events: none;
+	border: 6px solid transparent;
+	background: transparent;
+	content: "";
+	}
+
+/* Directions */
+
+.leaflet-tooltip-bottom {
+	margin-top: 6px;
+}
+.leaflet-tooltip-top {
+	margin-top: -6px;
+}
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-top:before {
+	left: 50%;
+	margin-left: -6px;
+	}
+.leaflet-tooltip-top:before {
+	bottom: 0;
+	margin-bottom: -12px;
+	border-top-color: #fff;
+	}
+.leaflet-tooltip-bottom:before {
+	top: 0;
+	margin-top: -12px;
+	margin-left: -6px;
+	border-bottom-color: #fff;
+	}
+.leaflet-tooltip-left {
+	margin-left: -6px;
+}
+.leaflet-tooltip-right {
+	margin-left: 6px;
+}
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	top: 50%;
+	margin-top: -6px;
+	}
+.leaflet-tooltip-left:before {
+	right: 0;
+	margin-right: -12px;
+	border-left-color: #fff;
+	}
+.leaflet-tooltip-right:before {
+	left: 0;
+	margin-left: -12px;
+	border-right-color: #fff;
+	}
+
+/* Printing */
+
+@media print {
+	/* Prevent printers from removing background-images of controls. */
+	.leaflet-control {
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+		}
+	}
+
+</style>
+<style>
+:root{
+  --bg:#F4FAFD; --panel:#FFFFFF; --ink:#0A1150; --muted:#4E5A86; --line:#B4DEF2; --soft:#D9EFF8;
+  --brand:#000C63; --brand-2:#000C63; --brand-ink:#FFFFFF; --brand-soft:#B4DEF2; --flag:#BF0A30; --gold:#FFD700; --sky:#43ADDE;
+  --map:#D9EFF8; --land:#FAFBFD; --county:#7A83A3; --place-fill:#DDE3EE; --place-line:#B7C0D6;
+  --cd:#000C63; --sd:#000C63; --hd:#46507F; --sel:#000C63; --sel-halo:#FFD700; --accent:#43ADDE; --city:#3A4470;
+  --r1:#FFD700; --r2:#004600; --r3:#43ADDE; --r4:#BF0A30; --r0:#A9B0C4;
+  --label-halo:#FAFBFD;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#00062E; --panel:#000A45; --ink:#EAF4FB; --muted:#9FB8D6; --line:#1B2A7A; --soft:#0B1760;
+    --brand:#000C63; --brand-2:#43ADDE; --brand-ink:#FFFFFF; --brand-soft:#B4DEF2; --flag:#E0334F; --gold:#FFD700; --sky:#69BDE5;
+    --map:#06103F; --land:#0F1A45; --county:#6F7AA6; --place-fill:#1B2757; --place-line:#2C3A72;
+    --cd:#FFFFFF; --sd:#D9EFF8; --hd:#8ECEEB; --sel:#FFFFFF; --sel-halo:#FFD700; --accent:#69BDE5; --city:#C9D3EE;
+    --r1:#FFD700; --r2:#3F9A3F; --r3:#43ADDE; --r4:#E0334F; --r0:#4A557F;
+    --label-halo:#0F1A45; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+    --bg:#00062E; --panel:#000A45; --ink:#EAF4FB; --muted:#9FB8D6; --line:#1B2A7A; --soft:#0B1760;
+    --brand:#000C63; --brand-2:#43ADDE; --brand-ink:#FFFFFF; --brand-soft:#B4DEF2; --flag:#E0334F; --gold:#FFD700; --sky:#69BDE5;
+    --map:#06103F; --land:#0F1A45; --county:#6F7AA6; --place-fill:#1B2757; --place-line:#2C3A72;
+    --cd:#FFFFFF; --sd:#D9EFF8; --hd:#8ECEEB; --sel:#FFFFFF; --sel-halo:#FFD700; --accent:#69BDE5; --city:#C9D3EE;
+    --r1:#FFD700; --r2:#3F9A3F; --r3:#43ADDE; --r4:#E0334F; --r0:#4A557F;
+    --label-halo:#0F1A45; color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:"Montserrat",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.45}
+*{box-sizing:border-box}
+.app{display:grid;grid-template-columns:minmax(320px,400px) 1fr;height:100%}
+.side{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line);background:var(--panel)}
+.side-top{padding:18px 18px 16px;display:flex;flex-direction:column;gap:12px;background:var(--brand);color:var(--brand-ink);border-bottom:5px solid var(--sky)}
+.side-top .kicker{color:var(--gold)}
+.side-top .field label{color:var(--brand-soft)}
+.side-top .hint{color:var(--brand-soft)}
+.side-top input[type=text],.side-top input[type=search]{background:#FFFFFF;color:#14213D;border-color:transparent}
+.side-top input::placeholder{color:#6B7690}
+.side-top button.primary{background:var(--gold);color:#000C63;border-color:var(--gold)}
+.side-top .status{color:var(--brand-soft)}.side-top .status.err{color:#FFB3C1}
+.side-top input:focus-visible,.side-top button:focus-visible{outline:2px solid var(--gold)}
+h1{font-family:"Montserrat",system-ui,sans-serif;font-weight:800;font-size:23px;letter-spacing:-.005em;text-transform:uppercase;margin:0;line-height:1.05;text-wrap:balance}
+.kicker{font-family:"Montserrat",sans-serif;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.field{display:flex;flex-direction:column;gap:5px;position:relative}
+.field label{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.row{display:flex;gap:6px}
+input[type=text],input[type=search]{flex:1;min-width:0;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:9px 11px}
+input:focus-visible,button:focus-visible,select:focus-visible,.chip:focus-visible,.opt:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button{font:inherit;font-weight:600;cursor:pointer;border-radius:6px;border:1px solid var(--line);background:var(--soft);color:var(--ink);padding:8px 12px}
+button.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+button:disabled{opacity:.55;cursor:progress}
+.hint{font-size:12.5px;color:var(--muted)}
+.drop{color:var(--ink);position:absolute;top:100%;left:0;right:0;z-index:1200;margin-top:4px;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.18);max-height:340px;overflow:auto}
+.opt{display:flex;align-items:center;gap:10px;padding:8px 11px;cursor:pointer;border-bottom:1px solid var(--soft)}
+.opt:last-child{border-bottom:0}
+.opt[aria-selected=true],.opt:hover{background:var(--soft)}
+.tag{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:700;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:4px;border:1px solid currentColor;white-space:nowrap}
+.t-hd{color:var(--hd)}.t-sd{color:var(--sd)}.t-cd{color:var(--cd)}.t-team,.t-org,.t-region,.t-rod{color:var(--brand-2)}
+.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--sky)}
+.pane h3{color:var(--brand-2)}.t-county,.t-place{color:var(--muted)}
+.opt small{color:var(--muted);display:block;font-size:12px}
+.tabs{display:flex;gap:2px;padding:0 18px;border-bottom:1px solid var(--line);background:var(--panel)}
+.tabs button{border:0;background:none;border-bottom:2px solid transparent;border-radius:0;padding:10px 10px;color:var(--muted)}
+.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--accent)}
+.pane{flex:1;overflow:auto;padding:16px 18px 28px;min-height:0}
+.pane h2{font-family:"Arvo","Rockwell",Georgia,serif;font-size:22px;margin:0 0 2px;font-weight:700;line-height:1.1;text-wrap:balance}
+.pane h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:18px 0 6px;font-weight:600}
+.sub{color:var(--muted);font-size:13.5px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;padding:4px 9px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer;font-weight:500}
+.chip:hover{border-color:var(--muted)}
+.chip .pct{color:var(--muted);font-variant-numeric:tabular-nums;font-size:12px}
+.chip.faint{opacity:.62}
+.sw{width:11px;height:11px;border-radius:3px;display:inline-block;flex:none}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px 13px;background:var(--bg);display:flex;flex-direction:column;gap:6px}
+.stack{display:flex;flex-direction:column;gap:10px}
+.kv{display:grid;grid-template-columns:118px 1fr;gap:6px 10px;align-items:baseline}
+.kv dt{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.kv dd{margin:0}
+.big{font-family:"Arvo","Rockwell",Georgia,serif;font-weight:700;font-size:18px;line-height:1.1}
+.note{font-size:12.5px;color:var(--muted);border-left:3px solid var(--line);padding-left:9px}
+.warn{border-left-color:var(--r2)}
+a{color:var(--accent)}
+.team-row{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--soft);cursor:pointer}
+.team-row:first-of-type{border-top:0}
+.team-row:hover .tname{text-decoration:underline}
+.tname{font-weight:600}
+.region-h{display:flex;align-items:center;gap:8px;margin-top:14px}
+.region-h .big{font-size:18px}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 6px;border-bottom:1px solid var(--soft);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);position:sticky;top:0;background:var(--panel);z-index:1}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--soft)}
+.tablewrap{overflow-x:auto}
+.map-wrap{position:relative;min-height:0}
+#map{position:absolute;inset:0;background:var(--map)}
+.leaflet-container{background:var(--map);font-family:"Montserrat",system-ui,sans-serif}
+.layers{position:absolute;top:12px;right:12px;z-index:1000;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;font-size:13.5px;box-shadow:0 6px 20px rgba(0,0,0,.12);max-width:230px}
+.layers summary{font-weight:700;cursor:pointer;font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-size:15px;letter-spacing:.03em;list-style:none;display:flex;justify-content:space-between;gap:10px}
+.layers summary::-webkit-details-marker{display:none}
+.layers summary::after{content:"–";color:var(--muted)}
+.layers details:not([open]) summary::after{content:"+"}
+.layers .opts{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+.layers label{display:flex;align-items:center;gap:8px;cursor:pointer}
+.ln{display:inline-block;width:22px;height:0;border-top:3px solid;flex:none}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-top:4px}
+.seg button{flex:1;border:0;border-radius:0;padding:5px 6px;font-size:12.5px;background:var(--bg)}
+.seg button[aria-pressed=true]{background:var(--brand);color:#fff}
+.layers-btn{position:absolute;top:12px;right:12px;z-index:1000;background:var(--brand);color:#fff;border-color:var(--brand);box-shadow:0 6px 20px rgba(0,0,0,.14);font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-size:16px;letter-spacing:.02em}
+.lay-head,.bnd{display:grid;grid-template-columns:1fr 56px 56px;align-items:center;gap:6px}
+.colh{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:center;font-weight:600}
+.bnd{padding:7px 0;border-top:1px solid var(--soft)}
+.bnd .nm{display:flex;align-items:center;gap:9px;font-weight:500}
+.bnd input{justify-self:center;width:18px;height:18px;accent-color:var(--accent)}
+.tg{display:flex;align-items:flex-start;gap:9px;cursor:pointer}
+.tg input{width:17px;height:17px;margin-top:2px;accent-color:var(--accent);flex:none}
+.rg{border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:var(--bg);display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.rg .kids{display:flex;flex-direction:column;gap:5px;padding-left:26px}
+.rg .who{color:var(--muted);font-size:13px}
+.row select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;flex:1;min-width:0}
+.ev-item{display:flex;flex-direction:column;gap:2px;padding:8px 0;border-top:1px solid var(--soft);cursor:pointer}
+.ev-item:first-child{border-top:0}
+.ev-item:hover .ev-t{text-decoration:underline}
+.ev-t{font-weight:600}
+.ev-when{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.ev-card{border:1px solid var(--line);border-radius:10px;padding:12px 13px;background:var(--bg);display:flex;flex-direction:column;gap:5px}
+.ev-tag{align-self:flex-start;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--brand-2)}
+.lbl{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:700;white-space:nowrap;pointer-events:none;text-shadow:0 0 3px var(--label-halo),0 0 3px var(--label-halo),0 0 2px var(--label-halo);transform:translate(-50%,-50%);position:absolute}
+.lbl-cd{color:var(--cd);font-size:17px;letter-spacing:.04em}
+.lbl-sd{color:var(--sd);font-size:13px}
+.lbl-hd{color:var(--hd);font-size:12px}
+.lbl-city{color:var(--city);font-size:11.5px;font-weight:600;font-family:"Montserrat",sans-serif}
+.lbl-county{color:var(--muted);font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600}
+.pin{width:22px;height:22px;border-radius:50% 50% 50% 0;background:#BF0A30;transform:rotate(-45deg);border:3px solid var(--panel);box-shadow:0 2px 6px rgba(0,0,0,.35);margin:-22px 0 0 -11px}
+.status{font-size:13px;color:var(--muted);min-height:1em}
+.status.err{color:var(--sel)}
+.leaflet-control-attribution{background:var(--panel)!important;color:var(--muted)!important}
+.leaflet-control-attribution a{color:var(--muted)!important}
+.leaflet-bar a{background:var(--panel);color:var(--ink);border-color:var(--line)}
+.leaflet-bar a:hover{background:var(--soft)}
+.loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);z-index:999;font-weight:600}
+@media (max-width:760px){
+  .app{grid-template-columns:1fr;grid-template-rows:auto 52vh auto;height:auto}
+  html,body{height:auto}
+  .side{display:contents}
+  .side-top{order:1;background:var(--panel)}
+  .map-wrap{order:2;height:52vh}
+  .tabs{order:3}
+  .pane{order:4;overflow:visible;background:var(--panel)}
+  .layers{max-width:180px;font-size:12.5px}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="side-top">
+      <div>
+        <div class="kicker">Colorado field program</div>
+        <h1>Colorado Turf Finder</h1>
+      </div>
+      <form class="field" id="addrForm" autocomplete="off">
+        <label for="addr">Find an address</label>
+        <div class="row">
+          <input type="text" id="addr" placeholder="1437 Bannock St, Denver" aria-describedby="addrHint">
+          <button class="primary" type="submit" id="addrBtn">Go</button>
+        </div>
+        <div class="hint" id="addrHint">Street address, city, ZIP, or coordinates like <span style="font-variant-numeric:tabular-nums">39.74, -104.99</span>. You can also click the map.</div>
+        <div class="status" id="addrStatus" role="status"></div>
+      </form>
+      <div class="field">
+        <label for="q">Search districts &amp; people</label>
+        <input type="search" id="q" placeholder="HD 19, SD 25, CD 8, team 1A, organizer, county, city" role="combobox" aria-expanded="false" aria-controls="drop" aria-autocomplete="list">
+        <div class="drop" id="drop" role="listbox" hidden></div>
+      </div>
+    </div>
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tabDetail" aria-selected="true" aria-controls="paneDetail">Details</button>
+      <button role="tab" id="tabLayers" aria-selected="false" aria-controls="paneLayers">Show on map</button>
+      <button role="tab" id="tabCross" aria-selected="false" aria-controls="paneCross">Overlap table</button>
+    </div>
+    <div class="pane" id="paneDetail" role="tabpanel"></div>
+    <div class="pane" id="paneLayers" role="tabpanel" hidden>
+      <div class="lay-head"><h3 style="margin-top:0">Boundaries</h3><span class="colh">Lines</span><span class="colh">Labels</span></div>
+      <div id="bndRows"></div>
+      <h3>Campaign turf</h3>
+      <div class="stack" style="gap:8px">
+        <label class="tg"><input type="checkbox" id="turfOn" checked> Shade campaign turf</label>
+        <div class="row" style="align-items:center;gap:10px"><span class="sub">Color by</span><div class="seg" id="colorBy" style="flex:1;max-width:200px;margin-top:0">
+          <button type="button" aria-pressed="true" data-c="region">Region</button>
+          <button type="button" aria-pressed="false" data-c="team">Team</button>
+        </div></div>
+        <div class="row" style="gap:6px"><button type="button" id="turfAll">Show all turf</button><button type="button" id="turfNone">Hide all turf</button></div>
+        <div id="turfTree"></div>
+        <label class="tg"><input type="checkbox" id="hdOnlyTurf"> Only draw House lines and labels for the turf shown</label>
+      </div>
+      <div id="evSection" hidden>
+        <h3>Mobilize events</h3>
+        <div class="stack" style="gap:8px">
+          <label class="tg"><input type="checkbox" id="evOn"> Show events on the map</label>
+          <div class="row" style="flex-wrap:wrap">
+            <select id="evRange" aria-label="Event dates"><option value="7">Next 7 days</option><option value="14">Next 14 days</option><option value="30">Next 30 days</option><option value="all">All upcoming</option></select>
+            <select id="evType" aria-label="Event type"><option value="">All event types</option></select>
+          </div>
+          <div class="sub" id="evMeta"></div>
+        </div>
+      </div>
+      <h3>Quick views</h3>
+      <div class="chips" id="presets">
+        <button type="button" class="chip" data-p="default">Opening view</button>
+        <button type="button" class="chip" data-p="all">Everything</button>
+        <button type="button" class="chip" data-p="leg">Legislative only</button>
+        <button type="button" class="chip" data-p="cd">Congress + turf</button>
+        <button type="button" class="chip" data-p="clean">Turf only</button>
+      </div>
+      <p class="note" style="margin-top:16px">These choices are saved in this browser, so the map opens the same way next time.</p>
+    </div>
+    <div class="pane" id="paneCross" role="tabpanel" hidden>
+      <div class="stack">
+        <div class="seg" id="xMode" style="max-width:260px">
+          <button type="button" aria-pressed="true" data-m="hd">By House district</button>
+          <button type="button" aria-pressed="false" data-m="sd">By Senate district</button>
+        </div>
+        <div class="row">
+          <input type="search" id="xFilter" placeholder="Filter: county, team, organizer, district…">
+        </div>
+        <div class="row">
+          <button type="button" id="xCopy">Copy table</button>
+          <button type="button" id="xDl" hidden>Download CSV</button>
+          <span class="status" id="xStatus" style="align-self:center"></span>
+        </div>
+        <div class="tablewrap"><table id="xTable"></table></div>
+        <p class="note">Percentages are share of land area, from Census 2025 boundaries. A district can share a small area with a neighbor and still contain few voters there.</p>
+      </div>
+    </div>
+  </aside>
+  <div class="map-wrap">
+    <div id="map" aria-label="Map of Colorado districts"></div>
+    <div class="loading" id="loading">Loading district boundaries…</div>
+    <button type="button" class="layers-btn" id="layersBtn" aria-controls="paneLayers">Show on map…</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script>
+(async function(){
+const STANDALONE=true;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const CO_BOUNDS=[[36.99,-109.06],[41.01,-102.04]];
+
+let D;
+try{ D=await (await fetch('data.json')).json(); }
+catch(e){ $('#loading').textContent='Could not load the district boundaries. Reload the page to try again.'; return; }
+
+// ---------- data model ----------
+const T=D.topo, feat=k=>topojson.feature(T,T.objects[k]).features;
+const F={hd:{},sd:{},cd:{},county:{},place:{}};
+feat('L_hd').forEach(f=>F.hd[f.properties.id]=f);
+feat('L_sd').forEach(f=>F.sd[f.properties.id]=f);
+feat('L_cd').forEach(f=>F.cd[f.properties.id]=f);
+feat('L_county').forEach(f=>F.county[f.properties.name]=f);
+feat('L_place').forEach(f=>F.place[f.properties.name]=f);
+const GEO={}; feat('L_turf').forEach(f=>{f.bbox=bboxOf(f.geometry);GEO[f.properties.team]=f;});
+for(const k in F) for(const id in F[k]) F[k][id].bbox=bboxOf(F[k][id].geometry);
+
+const TEAMS=D.teams, TEAM={}; TEAMS.forEach(t=>TEAM[t.team]=t);
+const REGIONS={
+  '1':{name:'Region 1',label:'CD-1',rod:'Courtland',v:'--r1'},
+  '2':{name:'Region 2',label:'CD-5',rod:'Chauncy',v:'--r2'},
+  '3':{name:'Region 3',label:'CD-3',rod:'Cayman',v:'--r3'},
+  '4':{name:'Region 4',label:'CD-8',rod:'Sierra',v:'--r4'},
+  'D':{name:'Distributed',label:'Statewide',rod:'Reilly',v:'--r0'}};
+const FIELD_TEAMS=()=>TEAMS.filter(t=>t.team!=='Dist');
+const DEFAULT_VIS={b:{cd:[0,0],sd:[0,0],hd:[1,1],county:[0,1],place:[0,0]},turf:1,teams:null,unassigned:1,hdOnly:0,colorBy:'region',ev:{on:1,range:'14',type:''}};
+let VIS=JSON.parse(JSON.stringify(DEFAULT_VIS));
+try{const sv=JSON.parse(localStorage.getItem('turfVis4')||'null');if(sv&&sv.b)VIS=Object.assign(VIS,sv);}catch(e){}
+const saveVis=()=>{try{localStorage.setItem('turfVis4',JSON.stringify(VIS));}catch(e){}};
+const teamOn=t=>!VIS.teams||VIS.teams.includes(t);
+const TEAM_SHADE={'1A':0,'1B':.45,'1C':-.3,'2A':.5,'2B':.25,'2C':0,'3A':.35,'3B':-.2,'4A-W':0,'4A-A':.4,'4A-L':-.35};
+const hdTeams={}; TEAMS.forEach(t=>t.hds.forEach(h=>(hdTeams[h]=hdTeams[h]||[]).push(t)));
+const hdDist=D.hdDist||{}, hdGeo=D.hdGeo||{};
+const hdBased=h=>(hdTeams[h]||[]).filter(t=>!t.geo);
+const inGeo=(k,lat,lng)=>{const f=GEO[k],b=f.bbox;return !(lng<b[0]||lng>b[2]||lat<b[1]||lat>b[3])&&inGeom(lng,lat,f.geometry);};
+const hdShown=h=>(hdTeams[h]||[]).some(t=>teamOn(t.team))||(!!VIS.unassigned&&(hdDist[h]||0)>=1);
+
+// overlaps: rel[a][b][idA] = [{id, pa (share of A), pb (share of B)}]
+const rel={};
+function addRel(a,b,x,y,pa,pb){((rel[a]=rel[a]||{})[b]=rel[a][b]||{});(rel[a][b][x]=rel[a][b][x]||[]).push({id:y,pa,pb});}
+for(const [key,arr] of Object.entries(D.ov)){
+  if(key==='places') continue;
+  const [a,b]=key.split('_'); const A=a==='place'?'place':a, B=b;
+  arr.forEach(r=>{addRel(A,B,r[A],r[B],r.pa,r.pb);addRel(B,A,r[B],r[A],r.pb,r.pa);});
+}
+const R=(a,b,id)=>((rel[a]||{})[b]||{})[id]||[];
+const placeKind={}; D.ov.places.forEach(p=>placeKind[p.name]=p.kind);
+
+// ---------- geometry helpers ----------
+function bboxOf(g){let a=[180,90,-180,-90];const polys=g.type==='Polygon'?[g.coordinates]:g.coordinates;
+  polys.forEach(p=>p[0].forEach(([x,y])=>{if(x<a[0])a[0]=x;if(y<a[1])a[1]=y;if(x>a[2])a[2]=x;if(y>a[3])a[3]=y;}));return a;}
+function inRing(x,y,r){let c=false;for(let i=0,j=r.length-1;i<r.length;j=i++){const[xi,yi]=r[i],[xj,yj]=r[j];if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))c=!c;}return c;}
+function inGeom(x,y,g){const polys=g.type==='Polygon'?[g.coordinates]:g.coordinates;
+  return polys.some(p=>inRing(x,y,p[0])&&!p.slice(1).some(h=>inRing(x,y,h)));}
+function locate(kind,lat,lng){const out=[];for(const id in F[kind]){const f=F[kind][id],b=f.bbox;if(lng<b[0]||lng>b[2]||lat<b[1]||lat>b[3])continue;if(inGeom(lng,lat,f.geometry))out.push(id);}return out;}
+
+// ---------- colors ----------
+function mix(hex,amt){ // amt>0 lighten toward white, <0 darken
+  const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;const t=amt>0?255:0,p=Math.abs(amt);
+  r=Math.round(r+(t-r)*p);g=Math.round(g+(t-g)*p);b=Math.round(b+(t-b)*p);return '#'+((1<<24)|(r<<16)|(g<<8)|b).toString(16).slice(1);}
+const regionColor=r=>css(REGIONS[r].v);
+const teamColor=t=>t==='Dist'?css('--r0'):mix(regionColor(TEAM[t].region),TEAM_SHADE[t]||0);
+
+// ---------- map ----------
+const map=L.map('map',{zoomSnap:.25,minZoom:6,maxZoom:15,attributionControl:true,preferCanvas:false,zoomControl:true});
+map.attributionControl.setPrefix(false).addAttribution('Boundaries: U.S. Census Bureau TIGER/Line 2025');
+map.fitBounds(CO_BOUNDS,{padding:[10,10]});
+map.setMaxBounds([[35.5,-111],[42.5,-100]]);
+
+const panes=['land','turf','place','county','hd','sd','cd','sel'];
+panes.forEach((p,i)=>{map.createPane(p).style.zIndex=410+i*10; if(p!=='sel') map.getPane(p).style.pointerEvents='none';});
+const rend=L.svg({padding:.5,pane:'turf'});
+map.createPane('labels').style.zIndex=640; map.getPane('labels').style.pointerEvents='none';
+map.createPane('events').style.zIndex=650;
+
+const fc=o=>({type:'FeatureCollection',features:Object.values(o)});
+const L_={};
+const stateLine=L.polygon(D.state,{pane:'cd',interactive:false,fill:false,weight:2,color:css('--cd'),opacity:.9});
+if(STANDALONE){
+  L_.street=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'});
+  L_.mask=L.polygon([[[85,-180],[85,180],[-85,180],[-85,-180]],D.state],{pane:'land',interactive:false,stroke:false,fillColor:css('--map'),fillOpacity:.85});
+}
+L_.land=L.geoJSON(fc(F.county),{pane:'land',interactive:false,style:()=>({stroke:true,weight:1.5,color:css('--land'),fillColor:css('--land'),fillOpacity:1})}).addTo(map);
+L_.place=L.geoJSON(fc(F.place),{pane:'place',interactive:false,style:f=>({stroke:true,weight:.6,color:css('--place-line'),fillColor:css('--place-fill'),fillOpacity:f.properties.kind==='CDP'?0.18:0.45,opacity:.8})});
+L_.county=L.geoJSON(fc(F.county),{pane:'county',interactive:false,style:()=>({weight:1,color:css('--county'),dashArray:'2 4',fill:false,opacity:.9})});
+L_.hd=L.geoJSON(fc(F.hd),{pane:'hd',interactive:false,style:f=>({weight:1,color:css('--hd'),fill:false,opacity:(VIS.hdOnly&&!hdShown(f.properties.id))?0:.75})});
+L_.sd=L.geoJSON(fc(F.sd),{pane:'sd',interactive:false,style:()=>({weight:2,color:css('--sd'),dashArray:'8 6',fill:false,opacity:.85})});
+L_.cd=L.geoJSON(fc(F.cd),{pane:'cd',interactive:false,style:()=>({weight:3.4,color:css('--cd'),fill:false,opacity:.9})});
+let colorBy=VIS.colorBy||'region';
+const stripes={};
+let selLayer=null, pin=null, current=null;
+L_.turf=L.geoJSON(fc(F.hd),{pane:'turf',interactive:false,renderer:rend,style:f=>turfStyle(f.properties.id)});
+function turfStyle(h){
+  const all=hdBased(h);
+  if(!all.length) return {stroke:false,fillOpacity:0};
+  const ts=all.filter(t=>teamOn(t.team));
+  if(!ts.length) return {stroke:false,fillOpacity:0};
+  const keys=colorBy==='region'?[...new Set(ts.map(t=>t.region))]:ts.map(t=>t.team);
+  const cols=keys.map(k=>colorBy==='region'?regionColor(k):teamColor(k));
+  if(cols.length===1) return {stroke:false,fillColor:cols[0],fillOpacity:{'1':.55,'3':.5}[ts[0].region]||.38};
+  return {stroke:false,fillColor:'url(#'+stripe(cols)+')',fillOpacity:.5};
+}
+L_.geo=L.geoJSON({type:'FeatureCollection',features:Object.values(GEO)},{pane:'turf',interactive:false,style:f=>{const k=f.properties.team;
+  if(k==='Dist') return {stroke:false,fillColor:css('--r0'),fillOpacity:VIS.unassigned?.14:0};
+  if(!teamOn(k)) return {stroke:false,fillOpacity:0};
+  return {weight:1.2,color:colorBy==='team'?teamColor(k):regionColor(TEAM[k].region),opacity:.8,fillColor:colorBy==='team'?teamColor(k):regionColor(TEAM[k].region),fillOpacity:{'1':.55,'3':.5}[TEAM[k].region]||.38};}});
+function stripe(cols){
+  const id='st'+cols.join('').replace(/#/g,'');
+  if(stripes[id]) return id;
+  const svg=rend._container; if(!svg) return id;
+  let defs=svg.querySelector('defs'); if(!defs){defs=document.createElementNS('http://www.w3.org/2000/svg','defs');svg.insertBefore(defs,svg.firstChild);}
+  const w=8*cols.length, p=document.createElementNS('http://www.w3.org/2000/svg','pattern');
+  p.setAttribute('id',id);p.setAttribute('patternUnits','userSpaceOnUse');p.setAttribute('width',w);p.setAttribute('height',w);p.setAttribute('patternTransform','rotate(45)');
+  cols.forEach((c,i)=>{const r=document.createElementNS('http://www.w3.org/2000/svg','rect');r.setAttribute('x',i*8);r.setAttribute('y',0);r.setAttribute('width',8);r.setAttribute('height',w);r.setAttribute('fill',c);p.appendChild(r);});
+  defs.appendChild(p); stripes[id]=1; return id;
+}
+
+// patterns need the svg container to exist first; restyle once added
+function resetStripes(){const svg=rend._container;const d=svg&&svg.querySelector('defs');if(d)d.innerHTML='';for(const k in stripes)delete stripes[k];}
+function restyle(){resetStripes();for(const k in L_){if(L_[k].setStyle&&L_[k].options.style)L_[k].setStyle(L_[k].options.style);}if(L_.mask)L_.mask.setStyle({fillColor:css('--map')});if(STANDALONE&&VIS&&VIS.b.street&&VIS.b.street[0])L_.land.setStyle({fillOpacity:0,opacity:0});drawSel();}
+restyle();
+
+// labels
+const MAJOR=['Denver','Colorado Springs','Aurora','Fort Collins','Lakewood','Thornton','Arvada','Westminster','Pueblo','Greeley','Boulder','Longmont','Loveland','Grand Junction','Broomfield','Castle Rock','Commerce City','Parker','Littleton','Brighton','Englewood','Durango','Montrose','Sterling','Glenwood Springs','Steamboat Springs','Alamosa','Trinidad','La Junta','Lamar','Craig','Gunnison','Cortez','Cañon City','Vail','Aspen','Salida','Fort Morgan','Windsor','Highlands Ranch','Centennial','Fountain','Burlington','Limon','Rifle','Delta','Golden','Pagosa Springs','Walsenburg','Leadville','Breckenridge','Meeker','Julesburg','Springfield','Yuma','Wray','Telluride','Evans','Erie','Security-Widefield'];
+const lbl=(ll,cls,txt)=>L.marker(ll,{pane:'labels',interactive:false,keyboard:false,icon:L.divIcon({className:'',html:`<div class="lbl ${cls}">${esc(txt)}</div>`,iconSize:[0,0]})});
+const TOP=['Denver','Colorado Springs','Fort Collins','Pueblo','Grand Junction','Greeley','Durango','Sterling','Lamar','Alamosa','Craig','Trinidad','Glenwood Springs','Gunnison','Burlington','Limon','Montrose','Steamboat Springs','Cortez','Salida','La Junta'];
+const LB={cd:L.layerGroup(),sd:L.layerGroup(),hd:L.layerGroup(),top:L.layerGroup(),city:L.layerGroup(),cityAll:L.layerGroup(),county:L.layerGroup()};
+for(const id in D.lab.cd) lbl(D.lab.cd[id],'lbl-cd','CD '+id).addTo(LB.cd);
+for(const id in D.lab.sd) lbl(D.lab.sd[id],'lbl-sd','SD '+id).addTo(LB.sd);
+const HDL={}; for(const id in D.lab.hd) HDL[id]=lbl(D.lab.hd[id],'lbl-hd','HD '+id).addTo(LB.hd);
+function filterHDLabels(){for(const id in HDL){const want=!VIS.hdOnly||hdShown(+id), has=LB.hd.hasLayer(HDL[id]); if(want&&!has)LB.hd.addLayer(HDL[id]); else if(!want&&has)LB.hd.removeLayer(HDL[id]);}}
+for(const n in D.lab.county) lbl(D.lab.county[n],'lbl-county',n).addTo(LB.county);
+for(const n in D.lab.place){ const m=lbl(D.lab.place[n],'lbl-city',n); if(TOP.includes(n)) m.addTo(LB.top); else if(MAJOR.includes(n)) m.addTo(LB.city); else if(placeKind[n]!=='CDP') m.addTo(LB.cityAll); }
+function syncLabels(){
+  const z=map.getZoom(), B=VIS.b;
+  const want={cd:B.cd[1]&&z<11, sd:B.sd[1]&&z>=8, hd:B.hd[1]&&z>=9.25,
+    county:B.county[1]&&z<11, top:B.place[1], city:B.place[1]&&z>=8.5, cityAll:B.place[1]&&z>=11};
+  for(const k in LB){ const has=map.hasLayer(LB[k]); if(want[k]&&!has)LB[k].addTo(map); else if(!want[k]&&has)map.removeLayer(LB[k]); }
+}
+map.on('zoomend',syncLabels);
+
+// ---------- show-on-map controls ----------
+const BND=[...(STANDALONE?[['street','Street map','<span class="sw" style="background:repeating-linear-gradient(45deg,var(--line) 0 3px,var(--panel) 3px 6px);border:1px solid var(--line)"></span>']]:[]),['cd','Congressional','<span class="ln" style="border-color:var(--cd)"></span>'],['sd','State Senate','<span class="ln" style="border-color:var(--sd);border-top-style:dashed"></span>'],
+  ['hd','State House','<span class="ln" style="border-color:var(--hd);border-top-width:1.5px"></span>'],['county','Counties','<span class="ln" style="border-color:var(--county);border-top-style:dotted"></span>'],
+  ['place','Cities &amp; towns','<span class="sw" style="background:var(--place-fill);border:1px solid var(--place-line)"></span>']];
+$('#bndRows').innerHTML=BND.map(([k,n,sw])=>`<div class="bnd"><span class="nm">${sw}${n}</span><input type="checkbox" id="b_${k}_0" aria-label="${n.replace('&amp;','and')} ${k==='street'?'on':'lines'}">${k==='street'?'<span></span>':`<input type="checkbox" id="b_${k}_1" aria-label="${n.replace('&amp;','and')} labels">`}</div>`).join('');
+function buildTree(){
+  $('#turfTree').innerHTML=['1','2','3','4'].map(r=>{const ts=FIELD_TEAMS().filter(t=>t.region===r);
+    return `<div class="rg"><label class="tg"><input type="checkbox" data-r="${r}"> <span class="sw" style="background:${regionColor(r)};margin-top:3px"></span><span><b>${esc(REGIONS[r].name)}</b> <span class="who">${esc(REGIONS[r].label)} · ROD ${esc(REGIONS[r].rod)}</span></span></label>
+      <div class="kids">${ts.map(t=>`<label class="tg"><input type="checkbox" data-team="${t.team}"> <span class="sw" style="background:${teamColor(t.team)};margin-top:3px"></span><span>Team ${esc(t.team)} <span class="who">${t.orgs.map(esc).join(', ')}</span></span></label>`).join('')}</div></div>`;}).join('')+
+    `<label class="tg" style="padding:2px 0 0 12px"><input type="checkbox" id="unOn"> <span class="sw" style="background:var(--r0);margin-top:3px"></span><span>Distributed <span class="who">everywhere outside field turf · ${esc(TEAM.Dist.orgs.join(', '))}</span></span></label>`;
+}
+function syncControls(){
+  BND.forEach(([k])=>{VIS.b[k]=VIS.b[k]||[0,0];$('#b_'+k+'_0').checked=!!VIS.b[k][0];const l=$('#b_'+k+'_1');if(l)l.checked=!!VIS.b[k][1];});
+  $('#turfOn').checked=!!VIS.turf; $('#hdOnlyTurf').checked=!!VIS.hdOnly;
+  $('#colorBy').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.c===colorBy));
+  $('#turfTree').querySelectorAll('[data-team]').forEach(i=>i.checked=teamOn(i.dataset.team));
+  $('#turfTree').querySelectorAll('[data-r]').forEach(i=>{const ks=FIELD_TEAMS().filter(t=>t.region===i.dataset.r).map(t=>teamOn(t.team));
+    i.checked=ks.every(Boolean); i.indeterminate=!i.checked&&ks.some(Boolean);});
+  $('#unOn').checked=!!VIS.unassigned;
+  const off=$('#turfOn').checked===false; $('#turfTree').style.opacity=off?.5:1;
+}
+function applyVis(){
+  BND.forEach(([k])=>{VIS.b[k]=VIS.b[k]||[0,0];const on=!!VIS.b[k][0],has=map.hasLayer(L_[k]); if(on&&!has)L_[k].addTo(map); else if(!on&&has)map.removeLayer(L_[k]);});
+  if(STANDALONE){const st=!!VIS.b.street[0]; L_.land.setStyle({fillOpacity:st?0:1,opacity:st?0:1}); if(st&&!map.hasLayer(L_.mask))L_.mask.addTo(map); if(!st&&map.hasLayer(L_.mask))map.removeLayer(L_.mask);}
+  stateLine.setStyle({color:css('--cd')}); if(!map.hasLayer(stateLine))stateLine.addTo(map);
+  ['turf','geo'].forEach(k=>{const t=!!VIS.turf,has=map.hasLayer(L_[k]); if(t&&!has)L_[k].addTo(map); else if(!t&&has)map.removeLayer(L_[k]);});
+  restyle(); filterHDLabels(); syncLabels(); syncControls(); saveVis();
+}
+function setTeams(list){const all=FIELD_TEAMS().map(t=>t.team);VIS.teams=list.length===all.length?null:list;}
+const curTeams=()=>FIELD_TEAMS().map(t=>t.team).filter(teamOn);
+$('#paneLayers').addEventListener('change',e=>{
+  const i=e.target; const m=i.id&&i.id.match(/^b_(\w+)_(\d)$/);
+  if(m){VIS.b[m[1]][+m[2]]=i.checked?1:0;}
+  else if(i.id==='turfOn'){VIS.turf=i.checked?1:0;}
+  else if(i.id==='hdOnlyTurf'){VIS.hdOnly=i.checked?1:0;}
+  else if(i.id==='unOn'){VIS.unassigned=i.checked?1:0;}
+  else if(i.dataset.team){const c=new Set(curTeams());i.checked?c.add(i.dataset.team):c.delete(i.dataset.team);setTeams([...c]);}
+  else if(i.dataset.r){const c=new Set(curTeams());FIELD_TEAMS().filter(t=>t.region===i.dataset.r).forEach(t=>i.checked?c.add(t.team):c.delete(t.team));setTeams([...c]);}
+  else return;
+  if(i.dataset.team||i.dataset.r||i.id==='unOn') VIS.turf=1;
+  applyVis();
+});
+$('#turfAll').addEventListener('click',()=>{VIS.teams=null;VIS.unassigned=1;VIS.turf=1;applyVis();});
+$('#turfNone').addEventListener('click',()=>{VIS.teams=[];VIS.unassigned=0;applyVis();});
+$('#presets').addEventListener('click',e=>{const b=e.target.closest('[data-p]');if(!b)return;const p=b.dataset.p;const keepSt=VIS.b.street;
+  if(p==='default') VIS=Object.assign(JSON.parse(JSON.stringify(DEFAULT_VIS)),{colorBy});
+  if(p==='all') {VIS.b={cd:[1,1],sd:[1,1],hd:[1,1],county:[1,1],place:[1,1]};VIS.turf=1;}
+  if(p==='leg') VIS.b={cd:[0,0],sd:[1,1],hd:[1,1],county:[1,0],place:[1,1]};
+  if(p==='cd') {VIS.b={cd:[1,1],sd:[0,0],hd:[0,0],county:[1,1],place:[1,1]};VIS.turf=1;}
+  if(p==='clean') {VIS.b={cd:[0,0],sd:[0,0],hd:[1,0],county:[0,0],place:[0,1]};VIS.turf=1;}
+  if(keepSt)VIS.b.street=keepSt;
+  applyVis(); if(EV){VIS.ev=VIS.ev||{on:1,range:'14',type:''};syncEv();drawEvents();}});
+$('#colorBy').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;colorBy=VIS.colorBy=b.dataset.c;applyVis(); if(!current) showOverview();});
+$('#layersBtn').addEventListener('click',()=>{showTab('layers');$('#paneLayers').scrollIntoView({behavior:'smooth',block:'start'});});
+buildTree(); applyVis();
+
+// ---------- Mobilize events ----------
+let EV=null; const evLayer=L.layerGroup();
+const fmtWhen=(s,e)=>{const o={timeZone:'America/Denver'};const d=new Date(s*1000);const day=d.toLocaleDateString('en-US',{...o,weekday:'short',month:'short',day:'numeric'});
+  const t=x=>new Date(x*1000).toLocaleTimeString('en-US',{...o,hour:'numeric',minute:'2-digit'});return `${day} · ${t(s)}${e?'–'+t(e):''}`;};
+const prettyType=t=>t?t.toLowerCase().replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()):'Event';
+function evVisible(e){const now=Date.now()/1000, r=VIS.ev.range, lim=r==='all'?Infinity:now+(+r)*86400;return e.end>=now&&e.start<=lim&&(!VIS.ev.type||e.type===VIS.ev.type);}
+function evList(){return EV?EV.events.filter(evVisible).sort((a,b)=>a.start-b.start):[];}
+function drawEvents(){
+  evLayer.clearLayers(); if(!EV) return;
+  const groups=new Map(); evList().forEach(e=>{const k=e.lat.toFixed(4)+','+e.lng.toFixed(4);(groups.get(k)||groups.set(k,[]).get(k)).push(e);});
+  groups.forEach(g=>{const m=L.circleMarker([g[0].lat,g[0].lng],{pane:'events',radius:g.length>1?9:7,weight:2.5,color:'#FFD700',fillColor:'#000C63',fillOpacity:1,bubblingMouseEvents:false});
+    m.bindTooltip(g.length>1?`${g.length} events · ${g[0].venue||g[0].city||''}`:g[0].title,{direction:'top',offset:[0,-6]});
+    m.on('click',()=>showEvents(g)); m.addTo(evLayer);});
+  const on=!!VIS.ev.on; if(on&&!map.hasLayer(evLayer))evLayer.addTo(map); if(!on&&map.hasLayer(evLayer))map.removeLayer(evLayer);
+  const n=evList().length, v=(EV.virtual||[]).filter(evVisible).length;
+  $('#evMeta').innerHTML=`${n} in-person event${n===1?'':'s'} in this date range${v?` · ${v} virtual (not mapped)`:''}<br>Updated ${esc(new Date(EV.updated).toLocaleString('en-US',{timeZone:'America/Denver',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}))}`;
+}
+function syncEv(){$('#evOn').checked=!!VIS.ev.on;$('#evRange').value=VIS.ev.range;$('#evType').value=VIS.ev.type;}
+function evItem(e,i){return `<div class="ev-item" data-ev="${i}"><span class="ev-t">${esc(e.title)}</span><span class="ev-when">${esc(fmtWhen(e.start,e.end))}${e.city?' · '+esc(e.city):''}</span></div>`;}
+let evShown=[];
+function bindEvItems(el){el.querySelectorAll('[data-ev]').forEach(x=>x.addEventListener('click',()=>{const e=evShown[+x.dataset.ev];map.setView([e.lat,e.lng],Math.max(map.getZoom(),13));showEvents([e]);}));}
+function eventsInSection(feats){
+  const list=evList().filter(e=>feats.some(f=>{const b=f.bbox||bboxOf(f.geometry);return !(e.lng<b[0]||e.lng>b[2]||e.lat<b[1]||e.lat>b[3])&&inGeom(e.lng,e.lat,f.geometry);}));
+  if(!list.length) return `<h3>Upcoming events here</h3><span class="sub">No in-person events in this date range.</span>`;
+  const start=0; evShown=list.slice(0,15);
+  return `<h3>Upcoming events here (${list.length})</h3><div>${list.slice(0,15).map((e,i)=>evItem(e,start+i)).join('')}</div>${list.length>15?`<div class="sub">Showing the first 15.</div>`:''}`;
+}
+function showEvents(g){
+  const e0=g[0], lat=e0.lat, lng=e0.lng;
+  const hd=locate('hd',lat,lng), sd=locate('sd',lat,lng), cd=locate('cd',lat,lng), co=locate('county',lat,lng);
+  let ts=hd.flatMap(h=>hdBased(h)); const nar=ts.filter(t=>t.area&&co.some(c=>t.area.includes(c))); if(nar.length) ts=nar;
+  ts=ts.concat(TEAMS.filter(t=>t.geo&&inGeo(t.team,lat,lng)));
+  current=null; drawSel(); clearPin();
+  render(`<div class="kicker">Mobilize event${g.length>1?'s':''} · ${esc(e0.venue||e0.city||'')}</div>
+    <div class="stack" style="margin-top:8px">${g.map(e=>`<div class="ev-card"><span class="ev-tag">${esc(prettyType(e.type))}</span>
+      <div class="big">${esc(e.title)}</div>
+      <div class="ev-when">${esc(fmtWhen(e.start,e.end))}${e.more?` · +${e.more} more date${e.more>1?'s':''}`:''}</div>
+      <div class="sub">${esc([e.venue,e.address,e.city].filter(Boolean).join(', '))}</div>
+      ${e.sponsor?`<div class="sub">Hosted by ${esc(e.sponsor)}</div>`:''}
+      <a href="${esc(e.url)}" target="_blank" rel="noopener">Open on Mobilize</a></div>`).join('')}</div>
+    <h3>Campaign team</h3>${teamBlock(ts,'This event is outside field turf.')}
+    <h3>Districts here</h3>
+    <dl class="kv">
+      <dt>State House</dt><dd><div class="chips">${hd.map(x=>chip('hd',x)).join('')}</div></dd>
+      <dt>State Senate</dt><dd><div class="chips">${sd.map(x=>chip('sd',x)).join('')}</div></dd>
+      <dt>Congress</dt><dd><div class="chips">${cd.map(x=>chip('cd',x)).join('')}</div></dd>
+      <dt>County</dt><dd><div class="chips">${co.map(x=>chip('county',x)).join('')}</div></dd>
+    </dl>`);
+}
+async function loadEvents(){
+  try{const r=await fetch('events.json',{cache:'no-store'}); if(!r.ok) return; EV=await r.json();}catch(e){return;}
+  if(!EV||!Array.isArray(EV.events)) {EV=null;return;}
+  VIS.ev=Object.assign({on:1,range:'14',type:''},VIS.ev||{});
+  const types=[...new Set(EV.events.concat(EV.virtual||[]).map(e=>e.type).filter(Boolean))].sort();
+  $('#evType').innerHTML='<option value="">All event types</option>'+types.map(t=>`<option value="${esc(t)}">${esc(prettyType(t))}</option>`).join('');
+  $('#evSection').hidden=false; syncEv(); drawEvents();
+  if(!current) showOverview();
+}
+['evOn','evRange','evType'].forEach(id=>$('#'+id).addEventListener('change',()=>{VIS.ev.on=$('#evOn').checked?1:0;VIS.ev.range=$('#evRange').value;VIS.ev.type=$('#evType').value;saveVis();drawEvents();if(!current)showOverview();}));
+
+// theme changes
+const mq=matchMedia('(prefers-color-scheme: dark)'); mq.addEventListener&&mq.addEventListener('change',()=>{buildTree();syncControls();restyle();if(!current)showOverview();});
+new MutationObserver(()=>{buildTree();syncControls();restyle();if(!current)showOverview();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+$('#loading').remove();
+
+// ---------- selection ----------
+function drawSel(){
+  if(selLayer){map.removeLayer(selLayer);selLayer=null;}
+  if(!current||!current.feats||!current.feats.length) return;
+  const fcSel={type:'FeatureCollection',features:current.feats};
+  selLayer=L.layerGroup([L.geoJSON(fcSel,{pane:'sel',interactive:false,style:()=>({weight:8,color:css('--sel-halo'),fill:false,opacity:.9})}),L.geoJSON(fcSel,{pane:'sel',interactive:false,style:()=>({weight:3,color:css('--sel'),fillColor:css('--sel-halo'),fillOpacity:.12,opacity:1})})]).addTo(map);
+}
+function fit(feats){ if(!feats.length) return; const b=L.geoJSON({type:'FeatureCollection',features:feats}).getBounds(); map.fitBounds(b,{padding:[30,30],maxZoom:12}); }
+function clearPin(){ if(pin){map.removeLayer(pin);pin=null;} }
+
+// ---------- UI helpers ----------
+const name={hd:id=>'HD '+id, sd:id=>'SD '+id, cd:id=>'CD '+id, county:n=>n+' County', place:n=>n, team:t=>t==='Dist'?'Distributed team':'Team '+((TEAM[t]&&TEAM[t].display)||t), region:r=>REGIONS[r].name};
+const pct=p=>p<0.1?'<0.1%':(p>=99.95?'100%':(p>=10?Math.round(p):p.toFixed(1))+'%');
+function chip(type,id,extra,faint){return `<button type="button" class="chip${faint?' faint':''}" data-t="${type}" data-id="${esc(id)}">${swatchFor(type,id)}${esc(name[type](id))}${extra?` <span class="pct">${esc(extra)}</span>`:''}</button>`;}
+function swatchFor(type,id){
+  if(type==='team') return `<span class="sw" style="background:${teamColor(id)}"></span>`;
+  if(type==='region') return `<span class="sw" style="background:${regionColor(id)}"></span>`;
+  if(type==='hd') return `<span class="tag t-hd" style="font-size:10px;padding:0 4px">H</span>`;
+  if(type==='sd') return `<span class="tag t-sd" style="font-size:10px;padding:0 4px">S</span>`;
+  if(type==='cd') return `<span class="tag t-cd" style="font-size:10px;padding:0 4px">C</span>`;
+  return '';
+}
+const numSort=(a,b)=>(+a.id||0)-(+b.id||0)||String(a.id).localeCompare(String(b.id));
+function relChips(a,b,id,mode){ // mode 'pa': share of this; 'pb': share of other
+  const rows=R(a,b,id).slice().sort(numSort);
+  if(!rows.length) return '<span class="sub">None</span>';
+  return `<div class="chips">${rows.map(r=>chip(b,r.id,mode==='pb'?pct(r.pb)+' of it':pct(r.pa),(r.pa<2&&r.pb<2))).join('')}</div>`;
+}
+function teamsForHDs(hds){const s=new Map();hds.forEach(h=>(hdTeams[h]||[]).forEach(t=>s.set(t.team,t)));return [...s.values()];}
+function teamBlock(ts,unassignedNote,forHD){
+  if(!ts.length) return `<div class="note">${unassignedNote||'No field team lists this district.'} Covered by the <button type="button" class="chip" data-t="team" data-id="Dist">${swatchFor('team','Dist')}Distributed team</button></div>`;
+  return `<div class="stack">${ts.map(t=>`<div class="card"><div class="row" style="align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">${chip('team',t.team)}${chip('region',t.region)}</div>
+    <div><span class="tname">${t.orgs.map(esc).join(', ')}</span> <span class="sub">· ROD ${esc(t.rod)}</span></div>
+    ${t.area?`<div class="sub">${esc(t.area)}${t.geo&&forHD&&hdGeo[forHD]&&hdGeo[forHD][t.team]<99.5?` · covers ${pct(hdGeo[forHD][t.team])} of this HD`:''}</div>`:''}</div>`).join('')}${forHD&&(hdDist[forHD]||0)>=1&&ts.length?`<div class="note">${pct(hdDist[forHD])} of HD ${forHD} is outside field turf and goes to the <button type="button" class="chip" data-t="team" data-id="Dist">${swatchFor('team','Dist')}Distributed team</button></div>`:''}</div>`;
+}
+function placesList(b,id){
+  const rows=R(b,'place',id).filter(r=>r.pb>=5||r.pa>=2).sort((x,y)=>(placeKind[x.id]==='CDP')-(placeKind[y.id]==='CDP')||y.pa-x.pa).slice(0,24);
+  if(!rows.length) return '<span class="sub">Mostly unincorporated</span>';
+  return `<div class="chips">${rows.map(r=>chip('place',r.id,placeKind[r.id]==='CDP'?'CDP':'')).join('')}</div>`;
+}
+function linkify(el){el.querySelectorAll('[data-t]').forEach(b=>b.addEventListener('click',()=>select(b.dataset.t,b.dataset.id,true)));}
+function render(html){const p=$('#paneDetail');p.innerHTML=html;linkify(p);if(typeof bindEvItems==='function')bindEvItems(p);p.scrollTop=0;showTab('detail');}
+
+// ---------- detail views ----------
+function select(type,id,zoom){
+  clearPin();
+  if(type==='org'){ type='team'; }
+  if(type==='rod'){ type='region'; }
+  let feats=[],html='';
+  if(type==='hd'){
+    const f=F.hd[id]; feats=[f];
+    html=`<div class="kicker">Colorado State House</div><h2>House District ${id}</h2>
+      <h3>Campaign team</h3>${teamBlock(hdTeams[id]||[],null,id)}
+      <h3>Senate districts it overlaps</h3>${relChips('hd','sd',id)}
+      <h3>Congressional district</h3>${relChips('hd','cd',id)}
+      <h3>Counties</h3>${relChips('hd','county',id)}
+      <h3>Cities &amp; towns</h3>${placesList('hd',id)}
+      <p class="note" style="margin-top:16px">Percent = share of HD ${id}'s land area in each district. Faded chips are slivers under 2%.</p>`;
+  } else if(type==='sd'){
+    const f=F.sd[id]; feats=[f]; const hds=R('sd','hd',id).map(r=>r.id);
+    html=`<div class="kicker">Colorado State Senate</div><h2>Senate District ${id}</h2>
+      <h3>House districts inside it</h3>${relChips('sd','hd',id)}
+      <h3>Campaign teams</h3>${teamBlock(teamsForHDs(hds.filter(h=>R('sd','hd',id).find(r=>r.id==h&&r.pb>=2))),'None of its main House districts are on a field team.')}
+      <h3>Congressional districts</h3>${relChips('sd','cd',id)}
+      <h3>Counties</h3>${relChips('sd','county',id)}
+      <h3>Cities &amp; towns</h3>${placesList('sd',id)}
+      <p class="note" style="margin-top:16px">Percent = share of SD ${id}'s land area. Faded chips are slivers under 2%.</p>`;
+  } else if(type==='cd'){
+    feats=[F.cd[id]]; const hds=R('cd','hd',id).filter(r=>r.pb>=2).map(r=>r.id);
+    html=`<div class="kicker">U.S. House</div><h2>Congressional District ${id}</h2>
+      <h3>State House districts</h3>${relChips('cd','hd',id)}
+      <h3>State Senate districts</h3>${relChips('cd','sd',id)}
+      <h3>Campaign teams working here</h3>${teamBlock(teamsForHDs(hds))}
+      <h3>Counties</h3>${relChips('cd','county',id)}
+      <p class="note" style="margin-top:16px">Percent = share of CD ${id}'s land area.</p>`;
+  } else if(type==='county'){
+    feats=[F.county[id]]; const hds=R('county','hd',id).filter(r=>r.pb>=2).map(r=>r.id);
+    html=`<div class="kicker">County</div><h2>${esc(id)} County</h2>
+      <h3>State House districts</h3>${relChips('county','hd',id,'pb')}
+      <h3>State Senate districts</h3>${relChips('county','sd',id,'pb')}
+      <h3>Congressional districts</h3>${relChips('county','cd',id,'pb')}
+      <h3>Campaign teams</h3>${teamBlock(teamsForHDs(hds))}
+      <p class="note" style="margin-top:16px">"of it" = share of that district's area that falls in ${esc(id)} County.</p>`;
+  } else if(type==='place'){
+    feats=[F.place[id]]; const hds=R('place','hd',id).map(r=>r.id);
+    const cnty=R('place','county',id).map(r=>r.id);
+    const ts=teamsForHDs(hds).filter(t=>!t.area||cnty.some(c=>t.area.includes(c)));
+    html=`<div class="kicker">${placeKind[id]==='CDP'?'Census-designated place':'City / town'}</div><h2>${esc(id)}</h2>
+      <h3>State House districts</h3>${relChips('place','hd',id)}
+      <h3>State Senate districts</h3>${relChips('place','sd',id)}
+      <h3>Congressional districts</h3>${relChips('place','cd',id)}
+      <h3>County</h3>${relChips('place','county',id)}
+      <h3>Campaign teams</h3>${teamBlock(ts.length?ts:teamsForHDs(hds))}
+      <p class="note" style="margin-top:16px">Percent = share of ${esc(id)}'s area in each district.</p>`;
+  } else if(type==='team'){
+    const t=TEAM[id];
+    if(id==='Dist'){
+      html=`<div class="kicker">Distributed · ROD ${esc(t.rod)}</div><h2>Distributed team</h2>
+        <p class="sub">Statewide. Also covers everywhere outside field turf, including the parts of Weld, Adams and Larimer outside CD 8. House districts that are all or mostly distributed: HD ${unassigned.join(', ')}.</p>
+        <h3>Organizers</h3><div class="stack">${t.orgs.map(o=>`<div class="big">${esc(o)}</div>`).join('')}</div>`;
+      feats=[GEO.Dist];
+    } else {
+      feats=t.geo?[GEO[t.team]]:t.hds.map(h=>F.hd[h]);
+      const sds=new Map(),cds=new Map();
+      if(t.geo){Object.keys(D.geoSD[t.team]).forEach(x=>sds.set(+x,1));Object.keys(D.geoCD[t.team]).forEach(x=>cds.set(+x,1));} else t.hds.forEach(h=>{R('hd','sd',h).forEach(r=>{if(r.pa>=2)sds.set(r.id,(sds.get(r.id)||0)+1)});R('hd','cd',h).forEach(r=>{if(r.pa>=2)cds.set(r.id,1)});});
+      const shared=t.hds.filter(h=>hdTeams[h].length>1);
+      html=`<div class="kicker">${esc(REGIONS[t.region].name)} · ${esc(t.label)} · ROD ${esc(t.rod)}</div><h2>${esc(name.team(t.team))}</h2>
+        <div class="big" style="margin-top:6px">${t.orgs.map(esc).join(' &amp; ')}</div>
+        ${t.area?`<div class="sub">${esc(t.area)}</div>`:''}
+        <h3>House districts (${t.hds.length})</h3><div class="chips">${t.hds.map(h=>chip('hd',h,t.geo?pct(hdGeo[h][t.team])+' of HD':(hdTeams[h].length>1?'shared':''))).join('')}</div>
+        <h3>Senate districts touched</h3><div class="chips">${[...sds.keys()].sort((a,b)=>a-b).map(s=>chip('sd',s)).join('')}</div>
+        <h3>Congressional districts touched</h3><div class="chips">${[...cds.keys()].sort((a,b)=>a-b).map(c=>chip('cd',c)).join('')}</div>
+        ${shared.length?`<h3>Shared with other teams</h3><div class="stack">${shared.map(h=>`<div class="sub">HD ${h}: ${hdTeams[h].filter(x=>x.team!==t.team).map(x=>name.team(x.team)+' ('+x.orgs.join(', ')+')').map(esc).join('; ')}</div>`).join('')}</div>`:''}`;
+    }
+  } else if(type==='region'){
+    const reg=REGIONS[id]; const ts=TEAMS.filter(t=>t.region===id);
+    feats=[...new Set(ts.filter(t=>!t.geo).flatMap(t=>t.hds))].map(h=>F.hd[h]).concat(ts.filter(t=>t.geo).map(t=>GEO[t.team]));
+    html=`<div class="kicker">Campaign region · ${esc(reg.label)}</div><h2>${esc(reg.name)}</h2><div class="sub">ROD ${esc(reg.rod)}</div>
+      <h3>Teams</h3>${teamBlock(ts)}
+      ${id!=='D'?`<h3>House districts</h3><div class="chips">${[...new Set(ts.flatMap(t=>t.hds))].sort((a,b)=>a-b).map(h=>chip('hd',h)).join('')}</div>`:''}`;
+    if(id==='D') feats=[];
+  }
+  if(EV&&feats.length) html+=eventsInSection(feats);
+  current={type,id,feats}; drawSel(); if(zoom) fit(feats); render(html);
+}
+const unassigned=Object.keys(F.hd).map(Number).filter(h=>(hdDist[h]||0)>=50).sort((a,b)=>a-b);
+
+function showOverview(){
+  current=null; drawSel();
+  const byR=['1','2','3','4','D'];
+  let html=`<p class="sub" style="margin-top:0">Every Colorado congressional (8), state senate (35) and state house (65) district, shaded by campaign turf. Search above, type an address, or click anywhere on the map to see which districts overlap there.</p>`;
+  byR.forEach(r=>{const reg=REGIONS[r];
+    html+=`<div class="region-h"><span class="sw" style="background:${regionColor(r)};width:14px;height:14px"></span><button type="button" class="chip" data-t="region" data-id="${r}" style="border:0;padding:0;background:none"><span class="big">${esc(reg.name)}</span></button><span class="sub">${esc(reg.label)} · ROD ${esc(reg.rod)}</span></div><div>`;
+    TEAMS.filter(t=>t.region===r).forEach(t=>{html+=`<div class="team-row" data-t="team" data-id="${t.team}"><span class="sw" style="background:${colorBy==='team'?teamColor(t.team):regionColor(r)};margin-top:5px"></span><div><div class="tname">${esc(name.team(t.team))} · ${t.orgs.map(esc).join(', ')}</div><div class="sub">${t.geo?esc(t.area):t.hds.length?'HD '+t.hds.join(', '):'Statewide, plus everywhere outside field turf'}</div></div></div>`;});
+    html+='</div>';});
+  const sharedHD=Object.keys(hdTeams).filter(h=>hdBased(h).length>1&&new Set(hdBased(h).map(t=>t.region)).size>1);
+  html+=`<p class="note" style="margin-top:16px">${sharedHD.length?`Striped districts are listed by more than one team (HD ${sharedHD.join(', ')}). `:''}Some turf follows county lines rather than whole districts: Team 1A covers all of Denver and Jefferson counties, Team 1B all of Arapahoe County plus the Douglas County parts of its districts, Team 1C only Boulder and Broomfield, Team 2C only El Paso, and Region 4 only CD 8 (Weld to Richard Thayer, Adams to Bennett Lane, Larimer to Sierra). Grey areas go to the Distributed team.</p>
+  <p class="note">Campaign regions keep their program names (CD-1, CD-5, CD-3, CD-8), but their turf does not match the real congressional lines. Region 1 includes Boulder and Douglas County districts that sit in the real CD 2 and CD 4. The dark solid lines on the map show the real congressional districts.</p>`;
+  if(EV&&VIS.ev.on){const nx=evList().slice(0,8);evShown=nx;
+    html+=`<h3 style="margin-top:20px">Next in-person events statewide</h3>${nx.length?`<div>${nx.map((e,i)=>evItem(e,i)).join('')}</div>`:'<span class="sub">None in this date range.</span>'}<div class="sub" style="margin-top:6px">Change the dates or event type under Show on map.</div>`;}
+  const p=$('#paneDetail');p.innerHTML=html;linkify(p);if(EV)bindEvItems(p);
+}
+
+// ---------- point lookup ----------
+function pointLookup(lat,lng,meta){
+  current=null; drawSel();
+  const hd=locate('hd',lat,lng), sd=locate('sd',lat,lng), cd=locate('cd',lat,lng), co=locate('county',lat,lng), pl=locate('place',lat,lng);
+  clearPin();
+  pin=L.marker([lat,lng],{draggable:true,pane:'sel',icon:L.divIcon({className:'',html:'<div class="pin"></div>',iconSize:[0,0]}),keyboard:true,title:'Drag to adjust'}).addTo(map);
+  pin.on('dragend',()=>{const p=pin.getLatLng();pointLookup(p.lat,p.lng,Object.assign({},meta||{},{dragged:true}));});
+  if(!hd.length){ render(`<h2>Outside Colorado</h2><p class="sub">That spot is not inside a Colorado district. Try another address or click inside the state.</p>`); return; }
+  let ts=hd.flatMap(h=>hdBased(h));
+  const narrowed=ts.filter(t=>t.area&&co.some(c=>t.area.includes(c)));
+  if(narrowed.length) ts=narrowed;
+  ts=ts.concat(TEAMS.filter(t=>t.geo&&inGeo(t.team,lat,lng)));
+  const h=hd[0];
+  const addrQ=meta&&meta.query?meta.query:`${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  const censusUrl='https://geocoding.geo.census.gov/geocoder/geographies/onelineaddress?benchmark=Public_AR_Current&vintage=Current_Current&format=html&address='+encodeURIComponent(meta&&meta.query?meta.query:'');
+  let banner='';
+  if(meta&&meta.approx&&!meta.dragged) banner=`<div class="note warn" style="margin-bottom:10px">Pin placed ${esc(meta.approx)}. Drag the pin to the exact spot if it looks off, especially near a district line.</div>`;
+  if(meta&&meta.dragged) banner=`<div class="note" style="margin-bottom:10px">Pin moved by hand.</div>`;
+  const nearEdge=nearBoundary(lat,lng);
+  render(`${banner}<div class="kicker">${esc(meta&&meta.label?meta.label:'Dropped pin')}</div>
+    <h2>${hd.map(x=>'HD '+x).join(' / ')} · ${sd.map(x=>'SD '+x).join(' / ')} · ${cd.map(x=>'CD '+x).join(' / ')}</h2>
+    <div class="sub">${[pl[0],co[0]?co[0]+' County':''].filter(Boolean).map(esc).join(', ')} <span style="font-variant-numeric:tabular-nums">(${lat.toFixed(5)}, ${lng.toFixed(5)})</span></div>
+    ${nearEdge?`<div class="note warn" style="margin-top:10px">This spot is close to a district line. Confirm with an official lookup before assigning.</div>`:''}
+    <h3>Campaign team</h3>${teamBlock(ts,'This spot is outside field turf.')}
+    <h3>Districts here</h3>
+    <dl class="kv">
+      <dt>State House</dt><dd><div class="chips">${hd.map(x=>chip('hd',x)).join('')}</div></dd>
+      <dt>State Senate</dt><dd><div class="chips">${sd.map(x=>chip('sd',x)).join('')}</div></dd>
+      <dt>Congress</dt><dd><div class="chips">${cd.map(x=>chip('cd',x)).join('')}</div></dd>
+      <dt>County</dt><dd><div class="chips">${co.map(x=>chip('county',x)).join('')}</div></dd>
+      ${pl.length?`<dt>City / place</dt><dd><div class="chips">${pl.map(x=>chip('place',x)).join('')}</div></dd>`:''}
+    </dl>
+    <h3>Rest of HD ${h} overlaps</h3>
+    <div class="sub" style="margin-bottom:4px">Senate districts</div>${relChips('hd','sd',h)}
+    <h3>Verify officially</h3>
+    <div class="stack">
+      ${meta&&meta.query?`<a href="${censusUrl}" target="_blank" rel="noopener">Census Bureau address lookup for “${esc(meta.query)}”</a>`:''}
+      <a href="https://leg.colorado.gov/find-my-legislator" target="_blank" rel="noopener">Colorado General Assembly: Find my legislator</a>
+    </div>`);
+  map.setView([lat,lng],Math.max(map.getZoom(),meta&&meta.zoom?meta.zoom:12));
+}
+function nearBoundary(lat,lng){ // ~150 m probe in 8 directions
+  const d=0.0014, base=[locate('hd',lat,lng)[0],locate('sd',lat,lng)[0],locate('cd',lat,lng)[0]].join();
+  for(let a=0;a<8;a++){const la=lat+d*Math.sin(a*Math.PI/4), ln=lng+d*1.3*Math.cos(a*Math.PI/4);
+    if([locate('hd',la,ln)[0],locate('sd',la,ln)[0],locate('cd',la,ln)[0]].join()!==base) return true;}
+  return false;
+}
+map.on('click',e=>pointLookup(e.latlng.lat,e.latlng.lng,{label:'Map click'}));
+
+// ---------- search ----------
+const IDX=[];
+const add=(t,id,label,sub,keys)=>IDX.push({t,id,label,sub,k:(label+' '+keys+' '+sub).toLowerCase()});
+Object.keys(F.hd).forEach(h=>{const ts=hdTeams[h]||[];add('hd',h,'House District '+h,ts.length?ts.map(t=>name.team(t.team)+' · '+t.orgs.join(', ')).join('; '):'No field team',`hd${h} hd ${h} house ${h} h${h} state house`);});
+Object.keys(F.sd).forEach(s=>add('sd',s,'Senate District '+s,'SD '+s+' · HD '+R('sd','hd',s).filter(r=>r.pb>=2).map(r=>r.id).sort((a,b)=>a-b).join(', '),`sd${s} sd ${s} senate ${s} s${s} state senate`));
+Object.keys(F.cd).forEach(c=>add('cd',c,'Congressional District '+c,'U.S. House',`cd${c} cd ${c} cd-${c} congress ${c} congressional ${c}`));
+TEAMS.forEach(t=>{add('team',t.team,name.team(t.team),t.orgs.join(', ')+(t.area?' · '+t.area:''),`team ${t.team} ${t.label} ${t.area}`);
+  t.orgs.forEach(o=>add('org',t.team,o,'Organizer · '+name.team(t.team)+' · ROD '+t.rod,`organizer ${t.label}`));});
+Object.entries(REGIONS).forEach(([r,g])=>add('region',r,g.name,g.label+' · ROD '+g.rod,`region ${r} rod ${g.rod} ${g.label}`));
+Object.keys(F.county).forEach(c=>add('county',c,c+' County','County',''));
+Object.keys(F.place).forEach(p=>add('place',p,p,placeKind[p]==='CDP'?'Census place':'City / town',p.normalize('NFD').replace(/[\u0300-\u036f]/g,'')));
+const TAGS={hd:'HD',sd:'SD',cd:'CD',team:'Team',org:'Organizer',region:'Region',county:'County',place:'Place'};
+const ORDER={hd:0,sd:1,cd:2,team:3,org:4,region:5,county:6,place:7};
+let hits=[],hi=-1;
+function norm(q){return q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\b(house|hd|h)\s*-?\s*(\d+)/,'hd$2').replace(/\b(senate|sd|s)\s*-?\s*(\d+)/,'sd$2').replace(/\b(congress(ional)?|cd)\s*-?\s*(\d+)/,'cd$3').trim();}
+function search(q){
+  const n=norm(q); if(!n) return [];
+  const toks=n.split(/\s+/);
+  return IDX.map(it=>{if(!toks.every(t=>it.k.includes(t)))return null;
+    const lab=it.label.toLowerCase(); let s=ORDER[it.t];
+    if(new RegExp('\\b'+toks[0].replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).test(lab)) s-=10;
+    if(/^(hd|sd|cd)\d+$/.test(n) && it.k.split(' ').includes(n)) s-=30;
+    return {it,s};}).filter(Boolean).sort((a,b)=>a.s-b.s).slice(0,12).map(x=>x.it);
+}
+function showDrop(){
+  const d=$('#drop'); hits=search($('#q').value); hi=hits.length?0:-1;
+  if(!hits.length){d.hidden=true;$('#q').setAttribute('aria-expanded','false');return;}
+  d.innerHTML=hits.map((h,i)=>`<div class="opt" role="option" id="opt${i}" aria-selected="${i===hi}" data-i="${i}"><span class="tag t-${h.t}">${TAGS[h.t]}</span><div><div>${esc(h.label)}</div><small>${esc(h.sub)}</small></div></div>`).join('');
+  d.hidden=false;$('#q').setAttribute('aria-expanded','true');
+}
+function pick(i){const h=hits[i];if(!h)return;$('#drop').hidden=true;$('#q').setAttribute('aria-expanded','false');$('#q').value=h.label;select(h.t,h.id,true);}
+$('#q').addEventListener('input',showDrop);
+$('#q').addEventListener('focus',()=>{if($('#q').value)showDrop();});
+$('#q').addEventListener('keydown',e=>{
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){if(!hits.length)return;e.preventDefault();hi=(hi+(e.key==='ArrowDown'?1:-1)+hits.length)%hits.length;
+    $('#drop').querySelectorAll('.opt').forEach((o,i)=>o.setAttribute('aria-selected',i===hi));$('#q').setAttribute('aria-activedescendant','opt'+hi);}
+  else if(e.key==='Enter'){e.preventDefault();if(hits.length)pick(Math.max(hi,0));}
+  else if(e.key==='Escape'){$('#drop').hidden=true;}
+});
+$('#drop').addEventListener('mousedown',e=>{const o=e.target.closest('.opt');if(o){e.preventDefault();pick(+o.dataset.i);}});
+document.addEventListener('click',e=>{if(!e.target.closest('.field'))$('#drop').hidden=true;});
+
+// ---------- address ----------
+let samplePromise=null;
+const getSample=()=>samplePromise||(samplePromise=(window.claude&&window.claude.use)?window.claude.use('sample'):Promise.resolve(null));
+const status=(t,err)=>{const s=$('#addrStatus');s.textContent=t||'';s.classList.toggle('err',!!err);};
+$('#addrForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const q=$('#addr').value.trim(); if(!q) return;
+  const m=q.match(/^\s*(-?\d{1,3}\.\d+)\s*[, ]\s*(-?\d{1,3}\.\d+)\s*$/);
+  if(m){let a=+m[1],b=+m[2]; if(a<0&&b>0)[a,b]=[b,a]; status(''); pointLookup(a,b,{label:'Coordinates'}); return;}
+  const qn=q.toLowerCase().replace(/,?\s*(co|colorado)\.?$/,'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const pk=Object.keys(F.place).find(p=>p.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')===qn);
+  if(pk){status('');select('place',pk,true);return;}
+  const ck=Object.keys(F.county).find(c=>c.toLowerCase()===qn.replace(/\s+county$/,''));
+  if(ck){status('');select('county',ck,true);return;}
+  if(STANDALONE){ await freeGeocode(q); return; }
+  const sample=await getSample();
+  if(!sample){status('Address lookup is not available in this view. Paste coordinates instead: in Google Maps, right-click the spot and click the numbers to copy them.',true);return;}
+  $('#addrBtn').disabled=true; status('Locating…');
+  try{
+    const r=await sample.json(`You are a geocoder for Colorado, USA. Give your best latitude and longitude for this location: "${q.replace(/"/g,"'")}". Assume Colorado if no state is given. Reply with JSON only, no prose: {"lat": number, "lon": number, "label": "normalized address or place", "precision": "address" | "street" | "zip" | "city" | "none"}. Use precision "none" with lat 0 and lon 0 if you cannot place it.`,{modelTier:'default'});
+    const lat=+r.lat, lon=+r.lon;
+    if(!r||r.precision==='none'||!isFinite(lat)||!isFinite(lon)||lat<36.9||lat>41.1||lon<-109.1||lon>-102){status('Could not place that address in Colorado. Add the city or ZIP, or paste coordinates.',true);return;}
+    const approxTxt={address:'at the approximate street address',street:'on the street, not the exact house',zip:'at the ZIP code center',city:'at the city center'}[r.precision]||'approximately';
+    status('');
+    pointLookup(lat,lon,{label:r.label||q,query:q,approx:approxTxt,zoom:r.precision==='city'?11:14});
+  }catch(err){
+    status(err&&err.code==='not_granted'?'Address lookup needs permission. Allow it when asked, or paste coordinates.':'Lookup failed. Try again, or paste coordinates.',true);
+  }finally{$('#addrBtn').disabled=false;}
+});
+
+const inCO=(lat,lon)=>isFinite(lat)&&isFinite(lon)&&lat>36.9&&lat<41.1&&lon>-109.1&&lon<-102;
+function censusJSONP(q){return new Promise((res,rej)=>{
+  const cb='cgeo'+Date.now()+Math.floor(Math.random()*1e4), sc=document.createElement('script');
+  const t=setTimeout(()=>{cleanup();rej(new Error('timeout'));},8000);
+  function cleanup(){clearTimeout(t);delete window[cb];sc.remove();}
+  window[cb]=d=>{cleanup();res(d);};
+  sc.onerror=()=>{cleanup();rej(new Error('network'));};
+  sc.src='https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?benchmark=Public_AR_Current&format=jsonp&callback='+cb+'&address='+encodeURIComponent(/\b(co|colorado)\b/i.test(q)?q:q+', CO');
+  document.head.appendChild(sc);});}
+async function freeGeocode(q){
+  $('#addrBtn').disabled=true; status('Locating…');
+  try{
+    try{
+      const d=await censusJSONP(q); const m=d&&d.result&&d.result.addressMatches&&d.result.addressMatches[0];
+      if(m&&inCO(+m.coordinates.y,+m.coordinates.x)){status('');pointLookup(+m.coordinates.y,+m.coordinates.x,{label:m.matchedAddress,query:q,zoom:15});return;}
+    }catch(e){}
+    const u='https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=us&bounded=1&viewbox=-109.1,41.1,-102,36.9&q='+encodeURIComponent(q);
+    const r=await (await fetch(u,{headers:{'Accept':'application/json'}})).json();
+    if(r&&r[0]&&inCO(+r[0].lat,+r[0].lon)){
+      const exact=/house|building|residential|address/.test((r[0].type||'')+(r[0].addresstype||''));
+      status('');pointLookup(+r[0].lat,+r[0].lon,{label:r[0].display_name.split(', ').slice(0,3).join(', '),query:q,approx:exact?null:'at the closest match found (street or place, not the exact house)',zoom:exact?15:13});return;}
+    status('Could not find that address in Colorado. Check the spelling, add the city or ZIP, or paste coordinates.',true);
+  }catch(e){status('Address lookup failed. Check your connection and try again, or paste coordinates.',true);}
+  finally{$('#addrBtn').disabled=false;}
+}
+
+// ---------- tabs ----------
+function showTab(t){[['detail','#tabDetail','#paneDetail'],['layers','#tabLayers','#paneLayers'],['cross','#tabCross','#paneCross']].forEach(([k,tb,pn])=>{$(tb).setAttribute('aria-selected',k===t);$(pn).hidden=k!==t;});}
+$('#tabDetail').addEventListener('click',()=>showTab('detail'));
+$('#tabLayers').addEventListener('click',()=>showTab('layers'));
+$('#tabCross').addEventListener('click',()=>{showTab('cross');drawTable();});
+
+// ---------- crosswalk ----------
+let xMode='hd';
+const fmtRel=(a,b,id)=>R(a,b,id).filter(r=>r.pa>=1).sort((x,y)=>y.pa-x.pa).map(r=>(b==='county'?r.id:b.toUpperCase()+' '+r.id)+' ('+pct(r.pa)+')');
+function rows(){
+  if(xMode==='hd') return Object.keys(F.hd).map(Number).sort((a,b)=>a-b).map(h=>{const ts=hdTeams[h]||[];
+    return {id:h,t:'hd',cols:['HD '+h,fmtRel('hd','sd',h).join(', '),fmtRel('hd','cd',h).join(', '),fmtRel('hd','county',h).map(s=>s.replace(/ \(.*/,'')).join(', '),ts.length?ts.map(t=>t.display||t.team).concat((hdDist[h]||0)>=1?['Dist ('+pct(hdDist[h])+')']:[]).join(', '):'Dist',ts.length?ts.map(t=>t.orgs.join(' & ')).join('; '):'Distributed',ts.length?[...new Set(ts.map(t=>REGIONS[t.region].name))].join(', '):'Distributed']};});
+  return Object.keys(F.sd).map(Number).sort((a,b)=>a-b).map(s=>{const hds=R('sd','hd',s).filter(r=>r.pb>=2).map(r=>r.id);const ts=teamsForHDs(hds);
+    return {id:s,t:'sd',cols:['SD '+s,R('sd','hd',s).filter(r=>r.pa>=1).sort((x,y)=>x.id-y.id).map(r=>'HD '+r.id+' ('+pct(r.pa)+')').join(', '),fmtRel('sd','cd',s).join(', '),fmtRel('sd','county',s).map(x=>x.replace(/ \(.*/,'')).join(', '),ts.map(t=>t.display||t.team).join(', ')||'Dist',ts.map(t=>t.orgs.join(' & ')).join('; ')||'Distributed',[...new Set(ts.map(t=>REGIONS[t.region].name))].join(', ')||'Distributed']};});
+}
+const HEAD={hd:['House','Senate (share of HD)','Congress','Counties','Team','Organizers','Region'],sd:['Senate','House (share of SD)','Congress','Counties','Teams','Organizers','Region']};
+function filtered(){const f=$('#xFilter').value.toLowerCase().trim();return rows().filter(r=>!f||r.cols.join(' ').toLowerCase().includes(f));}
+function drawTable(){
+  const rs=filtered();
+  $('#xTable').innerHTML=`<thead><tr>${HEAD[xMode].map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rs.map(r=>`<tr data-t="${r.t}" data-id="${r.id}">${r.cols.map((c,i)=>`<td${i===0?' style="font-weight:700;white-space:nowrap"':''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody>`;
+  $('#xTable').querySelectorAll('tbody tr').forEach(tr=>tr.addEventListener('click',()=>select(tr.dataset.t,tr.dataset.id,true)));
+  $('#xStatus').textContent=rs.length+' rows';
+}
+$('#xFilter').addEventListener('input',drawTable);
+$('#xMode').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;xMode=b.dataset.m;$('#xMode').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));drawTable();});
+const toCSV=(sep)=>[HEAD[xMode],...filtered().map(r=>r.cols)].map(r=>r.map(c=>sep===','?'"'+String(c).replace(/"/g,'""')+'"':String(c)).join(sep)).join('\n');
+$('#xCopy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(toCSV('\t'));$('#xStatus').textContent='Copied. Paste into a spreadsheet.';}catch(e){$('#xStatus').textContent='Copy is blocked here. Use Download CSV.';}});
+if(STANDALONE){$('#xDl').hidden=false;$('#xDl').addEventListener('click',()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([toCSV(',')],{type:'text/csv'}));a.download=xMode==='hd'?'co-house-district-overlaps.csv':'co-senate-district-overlaps.csv';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);});}
+else (async()=>{const dl=window.claude&&window.claude.use?await window.claude.use('downloads'):null;if(!dl)return;$('#xDl').hidden=false;
+  $('#xDl').addEventListener('click',async()=>{try{await dl.save({filename:xMode==='hd'?'co-house-district-overlaps.csv':'co-senate-district-overlaps.csv',data:toCSV(',')});}catch(e){$('#xStatus').textContent='Download was cancelled.';}});})();
+
+showOverview();
+loadEvents();
+})();
+</script>
+
+</body>
+</html>
