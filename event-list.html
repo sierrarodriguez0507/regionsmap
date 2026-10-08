@@ -72,8 +72,9 @@ details.team[open]>summary::before{transform:rotate(90deg)}
 .n{color:var(--muted);font-size:12.5px;margin-left:auto;font-variant-numeric:tabular-nums}
 details.team.empty{opacity:.7}
 .wrap{overflow-x:auto;border-top:1px solid var(--line)}
-table{border-collapse:collapse;width:100%;min-width:1320px;font-size:13px;table-layout:fixed}
-col.c-when{width:10.5%}col.c-ev{width:15.5%}col.c-tm{width:12.5%}col.c-type{width:7.5%}col.c-vis{width:6.5%}col.c-tags{width:6%}col.c-loc{width:12.5%}col.c-contact{width:7.5%}col.c-co{width:9.5%}col.c-camp{width:12%}
+table{border-collapse:collapse;width:100%;min-width:1420px;font-size:13px;table-layout:fixed}
+col.c-when{width:9.5%}col.c-ev{width:14.5%}col.c-tm{width:11.5%}col.c-type{width:6.5%}col.c-vis{width:6%}col.c-tags{width:11%}col.c-loc{width:12%}col.c-contact{width:9.5%}col.c-co{width:8.5%}col.c-camp{width:10.5%}
+td.tags .tag{white-space:normal;max-width:100%;overflow-wrap:anywhere}
 th,td{text-align:left;padding:8px 8px;border-bottom:1px solid var(--soft);vertical-align:top}
 th{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);background:var(--panel);vertical-align:bottom}
 tr:last-child td{border-bottom:0}
@@ -447,7 +448,7 @@ function rowEl(r){
     h('td',{class:'tm','data-label':'Team'},sel,h('div',{class:'sub'},changed?['Changed by hand (auto: '+r.auto_team+') · ',h('button',{class:'link',onclick:()=>{edit(r,'team',r.auto_team);render();}},'reset')]:r.auto_why)),
     h('td',{'data-label':'Event type'},h('span',{class:'tag'+(r.format==='Virtual'?' virtual':'')},r.format)),
     h('td',{'data-label':'Visibility'},h('span',{class:'tag'+(r.visibility==='Private'?' private':'')},r.visibility)),
-    h('td',{'data-label':'Tags'},r.tags.length?r.tags.map(t=>h('span',{class:'tag'},t)):h('span',{class:'dash'},'—')),
+    h('td',{class:'tags','data-label':'Tags'},r.tags.length?r.tags.map(t=>h('span',{class:'tag'},t)):h('span',{class:'dash'},'—')),
     h('td',{class:'loc','data-label':'Location'},r.format==='Virtual'?(r.virtual_url?h('a',{href:r.virtual_url,target:'_blank',rel:'noopener'},'Virtual link'):'Virtual'):r.location),
     h('td',{class:'contact','data-label':'Contact'},contactCell(r)),
     h('td',{class:'co','data-label':'Co-hosts'},co),
