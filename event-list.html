@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mobilize Event List</title>
+<meta name="description" content="Every upcoming Colorado Democratic Party Mobilize shift, by field team.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Arvo:wght@400;700&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<style>
+:root{
+  --bg:#F4FAFD; --panel:#FFFFFF; --ink:#0A1150; --muted:#4E5A86; --line:#B4DEF2; --soft:#D9EFF8;
+  --brand:#000C63; --brand-2:#000C63; --brand-ink:#FFFFFF; --brand-soft:#B4DEF2; --flag:#BF0A30; --gold:#FFD700; --sky:#43ADDE;
+  --accent:#43ADDE; --r1:#A98BE0; --r2:#004600; --r3:#43ADDE; --r4:#BF0A30; --warn-bg:#FFF6CC; --warn-ink:#4A3B00;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#00062E; --panel:#000A45; --ink:#EAF4FB; --muted:#9FB8D6; --line:#1B2A7A; --soft:#0B1760;
+    --brand:#000C63; --brand-2:#43ADDE; --flag:#E0334F; --sky:#69BDE5;
+    --accent:#69BDE5; --r1:#B9A0EC; --r2:#3F9A3F; --r3:#43ADDE; --r4:#E0334F; --warn-bg:#3A3000; --warn-ink:#FFE98A;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+    --bg:#00062E; --panel:#000A45; --ink:#EAF4FB; --muted:#9FB8D6; --line:#1B2A7A; --soft:#0B1760;
+    --brand:#000C63; --brand-2:#43ADDE; --flag:#E0334F; --sky:#69BDE5;
+    --accent:#69BDE5; --r1:#B9A0EC; --r2:#3F9A3F; --r3:#43ADDE; --r4:#E0334F; --warn-bg:#3A3000; --warn-ink:#FFE98A;
+    color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:"Montserrat",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px;line-height:1.45}
+a{color:var(--brand-2)}
+.top{background:var(--brand);color:var(--brand-ink);border-bottom:5px solid var(--sky);padding:18px 20px 16px;display:flex;flex-wrap:wrap;gap:8px 24px;align-items:flex-end;justify-content:space-between}
+.kicker{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:600}
+h1{font-weight:800;font-size:23px;text-transform:uppercase;margin:2px 0 0;line-height:1.05}
+.top .meta{font-size:12.5px;color:var(--brand-soft);text-align:right}
+.top a{color:#fff;font-weight:600}
+
+.bar{position:sticky;top:0;z-index:20;background:var(--panel);border-bottom:1px solid var(--line);padding:10px 20px;display:flex;flex-wrap:wrap;gap:8px 10px;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:3px;min-width:0}
+.field>span{font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.field.grow{flex:1 1 200px}
+input[type=search],input[type=text],input[type=password],select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-width:0;max-width:100%}
+input:focus-visible,button:focus-visible,select:focus-visible,summary:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button{font:inherit;font-weight:600;cursor:pointer;border-radius:6px;border:1px solid var(--line);background:var(--soft);color:var(--ink);padding:7px 12px}
+button.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+button.gold{background:var(--gold);color:#000C63;border-color:var(--gold)}
+button.link{background:none;border:0;padding:0;color:var(--brand-2);text-decoration:underline;font-weight:600}
+button:disabled{opacity:.55;cursor:progress}
+.check{display:flex;align-items:center;gap:6px;font-size:13px;padding:7px 0;white-space:nowrap}
+.spacer{flex:1 1 0}
+.count{font-size:12.5px;color:var(--muted);padding:7px 0;white-space:nowrap}
+
+.savebar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--warn-bg);color:var(--warn-ink);border-top:2px solid var(--gold);padding:9px 20px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;font-weight:500;box-shadow:0 -6px 18px rgba(0,0,0,.14)}
+body.unsaved main{padding-bottom:150px}
+body.unsaved #toast{bottom:120px}
+.savebar .msg{flex:1 1 240px}
+.note{margin:14px 20px 0;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--muted);font-size:13px}
+
+main{padding:14px 20px 60px}
+details.team{background:var(--panel);border:1px solid var(--line);border-left:6px solid var(--rc,var(--line));border-radius:8px;margin:0 0 12px;overflow:clip}
+details.team>summary{cursor:pointer;list-style:none;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;padding:11px 14px}
+details.team>summary::-webkit-details-marker{display:none}
+details.team>summary::before{content:"▸";color:var(--muted);font-size:12px;transition:transform .12s}
+details.team[open]>summary::before{transform:rotate(90deg)}
+.code{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:700;font-size:22px;letter-spacing:.02em;line-height:1}
+.who{font-family:"Arvo","Rockwell",Georgia,serif;font-weight:700;font-size:16px}
+.n{color:var(--muted);font-size:12.5px;margin-left:auto;font-variant-numeric:tabular-nums}
+details.team.empty{opacity:.7}
+.wrap{overflow-x:auto;border-top:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;min-width:1320px;font-size:13px;table-layout:fixed}
+col.c-when{width:10.5%}col.c-ev{width:15.5%}col.c-tm{width:12.5%}col.c-type{width:7.5%}col.c-vis{width:6.5%}col.c-tags{width:6%}col.c-loc{width:12.5%}col.c-contact{width:7.5%}col.c-co{width:9.5%}col.c-camp{width:12%}
+th,td{text-align:left;padding:8px 8px;border-bottom:1px solid var(--soft);vertical-align:top}
+th{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);background:var(--panel);vertical-align:bottom}
+tr:last-child td{border-bottom:0}
+td.when{white-space:nowrap;font-variant-numeric:tabular-nums}
+td.when b{display:block}
+td.ev,td.loc{overflow-wrap:anywhere}
+td.ev a{font-weight:600;text-decoration:none}
+td.ev a:hover{text-decoration:underline}
+td.contact{overflow-wrap:anywhere}
+td.tm select,td.co input{width:100%}
+.sub{color:var(--muted);font-size:12px;margin-top:3px}
+.tag{display:inline-block;font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:700;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;padding:1px 6px;border-radius:4px;border:1px solid currentColor;white-space:nowrap;color:var(--muted);margin:0 4px 3px 0}
+.tag.full{color:var(--flag)}
+.tag.virtual{color:var(--brand-2)}
+.tag.private{color:var(--flag)}
+.dash{color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;padding:2px 4px 2px 9px;border-radius:999px;border:1px solid var(--line);background:var(--soft);font-weight:500}
+.chip button{border:0;background:none;padding:0 4px;font-size:14px;line-height:1;color:var(--muted)}
+.chip button:hover{color:var(--flag)}
+select.add{padding:3px 6px;font-size:12.5px;max-width:100%}
+.chip{max-width:100%;overflow-wrap:anywhere}
+tr.changed td.tm select{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+
+dialog{border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);padding:18px;width:min(520px,calc(100vw - 32px));max-height:calc(100vh - 40px)}
+dialog::backdrop{background:rgba(0,6,46,.5)}
+dialog h2{font-family:"Arvo","Rockwell",Georgia,serif;font-size:19px;margin:0 0 6px}
+dialog p{margin:6px 0 10px;color:var(--muted);font-size:13px}
+dialog ol{margin:6px 0 10px;padding-left:20px;color:var(--muted);font-size:13px}
+.optlist{list-style:none;margin:8px 0;padding:0;border:1px solid var(--line);border-radius:8px;max-height:240px;overflow:auto}
+.optlist li{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:7px 10px;border-bottom:1px solid var(--soft)}
+.optlist li:last-child{border-bottom:0}
+.optlist li.none{color:var(--muted)}
+.rowf{display:flex;gap:6px}
+.rowf input{flex:1}
+.actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+.status{font-size:12.5px;color:var(--muted);min-height:18px}
+.status.err{color:var(--flag)}
+#toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--brand);color:#fff;padding:9px 14px;border-radius:8px;font-weight:600;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:50;max-width:calc(100vw - 32px)}
+
+@media (max-width:860px){
+  .top{padding:14px 16px 12px}.top .meta{text-align:left}
+  .bar{position:static;padding:10px 16px}.field{flex:1 1 140px}.field select,.field input{width:100%}
+  .savebar{padding:9px 16px}.note{margin:12px 16px 0}
+  body.unsaved main{padding-bottom:230px}body.unsaved #toast{bottom:200px}
+  main{padding:12px 16px 60px}
+  .wrap{overflow-x:visible}
+  table{min-width:0;table-layout:auto}
+  colgroup{display:none}
+  thead{display:none}
+  table,tbody,tr,td{display:block;width:100%}
+  tr{padding:10px 12px;border-bottom:1px solid var(--line)}
+  tr:last-child{border-bottom:0}
+  td{border:0;padding:3px 0}
+  td[data-label]::before{content:attr(data-label);display:block;font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-top:5px}
+  td.when b{display:inline;margin-right:6px}
+  td.tm select,td.co input{width:100%}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div>
+    <div class="kicker">Colorado field program</div>
+    <h1>Mobilize Event List</h1>
+  </div>
+  <div class="meta"><span id="meta">Loading events…</span><br><a href="./">Turf Finder map</a> · <a href="event-list.csv">Hourly CSV</a> · <a href="event-list.json">JSON feed</a></div>
+</header>
+
+<section class="bar" aria-label="Filters">
+  <label class="field grow"><span>Search</span><input type="search" id="q" placeholder="Event, city, tag, host…"></label>
+  <label class="field"><span>Team</span><select id="fTeam"></select></label>
+  <label class="field"><span>Dates</span><select id="fDate">
+    <option value="all">All upcoming</option><option value="1">Today</option><option value="7">Next 7 days</option><option value="14">Next 14 days</option><option value="30">Next 30 days</option></select></label>
+  <label class="field"><span>Event type</span><select id="fFormat"><option value="">In person + virtual</option><option>In person</option><option>Virtual</option></select></label>
+  <label class="field"><span>Activity</span><select id="fAct"></select></label>
+  <label class="field"><span>Visibility</span><select id="fVis"><option value="">Any</option><option>Public</option><option>Private</option></select></label>
+  <label class="field"><span>Collaboration</span><select id="fCamp"></select></label>
+  <label class="check"><input type="checkbox" id="fForms"> Hide all-day sign-up forms</label>
+  <span class="spacer"></span>
+  <span class="count" id="count"></span>
+  <button id="btnOpts">Campaign options</button>
+  <button id="btnCsv">Download this view (CSV)</button>
+</section>
+
+<div class="note" id="contactNote" hidden>Contact info is blank because Mobilize only shares event owners with a logged-in API key. Add a <b>MOBILIZE_API_KEY</b> secret to the repo and the next hourly run fills it in.</div>
+
+<main id="groups"></main>
+<div class="savebar" id="savebar" hidden>
+  <span class="msg" id="saveMsg"></span>
+  <label class="check" title="When on, a change to one shift is copied to every shift of the same event"><input type="checkbox" id="allShifts" checked> Apply my changes to every shift of the event</label>
+  <button class="primary" id="btnSave">Save for everyone</button>
+  <button id="btnFile">Download edits file</button>
+  <button class="link" id="btnDiscard">Discard</button>
+</div>
+<div id="toast" hidden role="status"></div>
+
+<dialog id="optDlg">
+  <h2>Collaborating campaigns</h2>
+  <p>These are the choices in the “Collaborating campaigns” dropdown on every row.</p>
+  <ul class="optlist" id="optList"></ul>
+  <form class="rowf" id="optForm"><input type="text" id="optNew" placeholder="Add a campaign or organization" autocomplete="off"><button class="primary">Add</button></form>
+  <p id="sugWrap" hidden>Hosting events on the feed now: <span id="sug"></span></p>
+  <div class="actions"><button id="optClose">Done</button></div>
+</dialog>
+
+<dialog id="saveDlg">
+  <h2>Save for everyone</h2>
+  <p>Saving writes your changes to <b>event-edits.json</b> in the GitHub repo, so everyone who opens this page sees them and the hourly CSV includes them. GitHub needs a token to let this page write. You only do this once per browser.</p>
+  <ol>
+    <li>On GitHub: Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token.</li>
+    <li>Repository access: only <b id="repoName"></b>. Permissions: Contents → Read and write.</li>
+    <li>Paste the token here. It stays in this browser and is only sent to GitHub.</li>
+  </ol>
+  <input type="password" id="tok" placeholder="github_pat_…" autocomplete="off" style="width:100%">
+  <div class="status" id="saveStatus"></div>
+  <div class="actions"><button id="tokForget" class="link">Forget saved token</button><span class="spacer"></span><button id="saveCancel">Cancel</button><button class="primary" id="saveGo">Save</button></div>
+</dialog>
+
+<script>
+(async function(){
+'use strict';
+const $=s=>document.querySelector(s);
+const TZ='America/Denver';
+// Where "Save for everyone" writes. Worked out from the page address on GitHub Pages.
+const gh=location.hostname.endsWith('.github.io');
+const REPO={owner:gh?location.hostname.split('.')[0]:'sierrarodriguez0507',name:gh?(location.pathname.split('/')[1]||'regionsmap'):'regionsmap',branch:'main',path:'event-edits.json'};
+
+const store={
+  get(k,d){try{const v=localStorage.getItem('evlist.'+k);return v==null?d:JSON.parse(v);}catch(e){return d;}},
+  set(k,v){try{localStorage.setItem('evlist.'+k,JSON.stringify(v));}catch(e){}},
+  del(k){try{localStorage.removeItem('evlist.'+k);}catch(e){}}
+};
+function h(tag,attrs,...kids){const el=document.createElement(tag);
+  for(const k in attrs||{}){const v=attrs[k];if(v==null||v===false)continue;
+    if(k==='class')el.className=v;else if(k.startsWith('on'))el.addEventListener(k.slice(2),v);else if(k in el&&k!=='list')el[k]=v;else el.setAttribute(k,v);}
+  kids.flat().forEach(c=>{if(c!=null&&c!==false)el.append(c.nodeType?c:document.createTextNode(c));});return el;}
+let toastT;function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2600);}
+
+// ---------- load ----------
+let DATA,BASE={saved_at:null,campaign_options:[],edits:{}};
+try{const r=await fetch('event-list.json',{cache:'no-store'});if(!r.ok)throw 0;DATA=await r.json();}
+catch(e){$('#meta').textContent='No events yet';$('#groups').append(h('div',{class:'note',style:'margin:0'},'The event list has not been built yet. On GitHub, open Actions → “Update Mobilize events” → Run workflow, then reload this page in a minute or two.'));return;}
+try{const r=await fetch('event-edits.json',{cache:'no-store'});if(r.ok){const j=await r.json();BASE={saved_at:j.saved_at||null,campaign_options:j.campaign_options||[],edits:j.edits||{}};}}catch(e){}
+// GitHub Pages takes a minute to republish after a save, so prefer this browser's copy of a newer save.
+const mine=store.get('saved',null);
+if(mine&&mine.saved_at&&(!BASE.saved_at||mine.saved_at>BASE.saved_at))BASE=mine;else store.del('saved');
+let PENDING=store.get('pending',{options:null,edits:{}});
+
+const TEAMS=DATA.teams,TEAM={};TEAMS.forEach(t=>TEAM[t.code]=t);
+const nowS=Date.now()/1000;
+const ROWS=DATA.rows.filter(r=>r.end>=nowS);
+const BYEVENT={};ROWS.forEach(r=>(BYEVENT[r.event_id]=BYEVENT[r.event_id]||[]).push(r));
+const teamName=t=>t.organizer?`${t.code} · ${t.organizer}`:(t.name||t.code);
+
+// ---------- edits ----------
+// An edit is {team, campaigns, cohosts} stored under "e<event id>" (every shift of
+// the event) or "t<shift id>" (one shift). A shift's own edit wins. null removes a field.
+function layered(a,b){const out={};for(const k of new Set([...Object.keys(a||{}),...Object.keys(b||{})])){
+  const m={...(a||{})[k]};const p=(b||{})[k]||{};for(const f in p){if(p[f]==null)delete m[f];else m[f]=p[f];}
+  if(Object.keys(m).length)out[k]=m;}return out;}
+let MERGED={};
+function remerge(){MERGED=layered(BASE.edits,PENDING.edits);}
+const same=(a,b)=>JSON.stringify(a??null)===JSON.stringify(b??null);
+function options(){return PENDING.options||BASE.campaign_options||[];}
+function autoOf(r,f){return f==='team'?r.auto_team:f==='cohosts'?(r.auto_cohosts||''):[];}
+function value(r,f){const e=MERGED['e'+r.event_id]||{},t=MERGED[r.key]||{};
+  let v=t[f]!==undefined?t[f]:e[f];
+  if(f==='team'&&!TEAM[v])v=undefined;
+  return v!==undefined?v:autoOf(r,f);}
+function setPending(key,f,v){
+  // store only what differs from what is already saved
+  const base=(BASE.edits[key]||{})[f];
+  PENDING.edits[key]=PENDING.edits[key]||{};
+  if(same(base,v))delete PENDING.edits[key][f];else PENDING.edits[key][f]=v;
+  if(!Object.keys(PENDING.edits[key]).length)delete PENDING.edits[key];
+}
+function edit(r,f,v){
+  const auto=autoOf(r,f);
+  if($('#allShifts').checked){
+    setPending('e'+r.event_id,f,same(v,auto)?null:v);
+    (BYEVENT[r.event_id]||[]).forEach(x=>{if((MERGED[x.key]||{})[f]!==undefined||(PENDING.edits[x.key]||{})[f]!==undefined)setPending(x.key,f,null);});
+  }else{
+    const ev=(MERGED['e'+r.event_id]||{})[f];
+    setPending(r.key,f,same(v,ev!==undefined?ev:auto)?null:v);
+  }
+  remerge();store.set('pending',PENDING);syncSave();
+}
+function pendingCount(){let n=PENDING.options?1:0;for(const k in PENDING.edits)n+=Object.keys(PENDING.edits[k]).length;return n;}
+
+// ---------- filters ----------
+const F=Object.assign({q:'',team:'',date:'all',format:'',act:'',vis:'',camp:'',forms:false},store.get('filters',{}));
+function dayStr(offset){const d=new Date(Date.now()+offset*864e5);return new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(d);}
+function visible(r){
+  if(F.forms&&r.all_day)return false;
+  if(F.format&&r.format!==F.format)return false;
+  if(F.act&&r.activity!==F.act)return false;
+  if(F.vis&&r.visibility!==F.vis)return false;
+  if(F.date!=='all'&&r.date>dayStr(+F.date-1))return false;
+  const team=value(r,'team');
+  if(F.team){if(F.team.startsWith('R')){if(TEAM[team].region!==F.team.slice(1))return false;}else if(team!==F.team)return false;}
+  const camps=value(r,'campaigns');
+  if(F.camp==='__any'&&!camps.length)return false;
+  if(F.camp==='__none'&&camps.length)return false;
+  if(F.camp&&!F.camp.startsWith('__')&&!camps.includes(F.camp))return false;
+  if(F.q){const hay=[r.title,r.city,r.venue,r.host_org,r.activity,r.contact_name,value(r,'cohosts'),...r.tags,...camps].join(' ').toLowerCase();
+    if(!F.q.toLowerCase().split(/\s+/).every(w=>hay.includes(w)))return false;}
+  return true;
+}
+function fillFilters(){
+  const ft=$('#fTeam');ft.replaceChildren(h('option',{value:''},'All teams'),
+    ...['1','2','3','4'].map(n=>h('option',{value:'R'+n},'Region '+n+' (all)')),
+    ...TEAMS.map(t=>h('option',{value:t.code},teamName(t))));
+  const acts=[...new Set(ROWS.map(r=>r.activity).filter(Boolean))].sort();
+  $('#fAct').replaceChildren(h('option',{value:''},'Any'),...acts.map(a=>h('option',{},a)));
+  fillCampFilter();
+  $('#q').value=F.q;ft.value=F.team;$('#fDate').value=F.date;$('#fFormat').value=F.format;$('#fAct').value=F.act;$('#fVis').value=F.vis;$('#fForms').checked=F.forms;
+  [ft,$('#fAct')].forEach(s=>{if(s.selectedIndex<0)s.value='';});
+}
+function fillCampFilter(){const s=$('#fCamp');
+  s.replaceChildren(h('option',{value:''},'Any'),h('option',{value:'__any'},'With a campaign'),h('option',{value:'__none'},'None yet'),...options().map(o=>h('option',{value:o},o)));
+  s.value=F.camp;if(s.selectedIndex<0){s.value='';F.camp='';}}
+[['#q','q','input'],['#fTeam','team','change'],['#fDate','date','change'],['#fFormat','format','change'],['#fAct','act','change'],['#fVis','vis','change'],['#fCamp','camp','change']]
+  .forEach(([sel,k,ev])=>$(sel).addEventListener(ev,e=>{F[k]=e.target.value;store.set('filters',F);render();}));
+$('#fForms').addEventListener('change',e=>{F.forms=e.target.checked;store.set('filters',F);render();});
+
+// ---------- rows ----------
+const fmtDay=new Intl.DateTimeFormat('en-US',{timeZone:TZ,weekday:'short',month:'short',day:'numeric'});
+function campCell(r){
+  const chosen=value(r,'campaigns'),opts=options();
+  const add=h('select',{class:'add','aria-label':'Add a collaborating campaign',onchange:e=>{const v=e.target.value;e.target.value='';
+      if(v==='__edit'){openOptions();return;}
+      if(v){edit(r,'campaigns',[...chosen,v]);refreshEvent(r);}}},
+    h('option',{value:''},opts.length?'+ Add':'Set up…'),
+    ...opts.filter(o=>!chosen.includes(o)).map(o=>h('option',{value:o},o)),
+    h('option',{value:'__edit'},'Edit the options…'));
+  return h('div',{class:'chips'},
+    ...chosen.map(c=>h('span',{class:'chip'},c,h('button',{title:'Remove '+c,'aria-label':'Remove '+c,onclick:()=>{edit(r,'campaigns',chosen.filter(x=>x!==c));refreshEvent(r);}},'×'))),add);
+}
+function rowEl(r){
+  const team=value(r,'team'),changed=team!==r.auto_team;
+  const sel=h('select',{'aria-label':'Team for '+r.title,onchange:e=>{edit(r,'team',e.target.value);const n=$('#allShifts').checked?(BYEVENT[r.event_id]||[]).length:1;render();toast(`Moved ${n} shift${n===1?'':'s'} to ${teamName(TEAM[e.target.value])}`);}},
+    ...TEAMS.map(t=>h('option',{value:t.code,selected:t.code===team},teamName(t))));
+  const contact=[r.contact_name&&h('div',{},r.contact_name),r.contact_email&&h('div',{},h('a',{href:'mailto:'+r.contact_email},r.contact_email)),r.contact_phone&&h('div',{},h('a',{href:'tel:'+r.contact_phone},r.contact_phone))].filter(Boolean);
+  const co=h('input',{type:'text',value:value(r,'cohosts'),placeholder:'Add co-hosts','aria-label':'Co-hosts for '+r.title,onchange:e=>{edit(r,'cohosts',e.target.value.trim());refreshEvent(r);}});
+  const d=new Date(r.start*1000);
+  return h('tr',{class:changed?'changed':'','data-key':r.key,'data-event':r.event_id},
+    h('td',{class:'when','data-label':'When'},h('b',{},fmtDay.format(d)),r.all_day?'All day':r.time),
+    h('td',{class:'ev','data-label':'Event'},r.url?h('a',{href:r.url,target:'_blank',rel:'noopener'},r.title):r.title,
+      h('div',{class:'sub'},r.activity&&h('span',{class:'tag'},r.activity),r.full&&h('span',{class:'tag full'},'Full'),r.host_org&&r.host_org!==DATA.org_name?'Hosted by '+r.host_org:null)),
+    h('td',{class:'tm','data-label':'Team'},sel,h('div',{class:'sub'},changed?['Changed by hand (auto: '+r.auto_team+') · ',h('button',{class:'link',onclick:()=>{edit(r,'team',r.auto_team);render();}},'reset')]:r.auto_why)),
+    h('td',{'data-label':'Event type'},h('span',{class:'tag'+(r.format==='Virtual'?' virtual':'')},r.format)),
+    h('td',{'data-label':'Visibility'},h('span',{class:'tag'+(r.visibility==='Private'?' private':'')},r.visibility)),
+    h('td',{'data-label':'Tags'},r.tags.length?r.tags.map(t=>h('span',{class:'tag'},t)):h('span',{class:'dash'},'—')),
+    h('td',{class:'loc','data-label':'Location'},r.format==='Virtual'?(r.virtual_url?h('a',{href:r.virtual_url,target:'_blank',rel:'noopener'},'Virtual link'):'Virtual'):r.location),
+    h('td',{class:'contact','data-label':'Contact'},contact.length?contact:h('span',{class:'dash'},'—'),r.volunteer_hosted&&h('div',{class:'sub'},'Volunteer host')),
+    h('td',{class:'co','data-label':'Co-hosts'},co),
+    h('td',{class:'camp','data-label':'Collaborating campaigns'},campCell(r)));
+}
+// Redraw the rows of one event in place (keeps your scroll position and the open groups).
+function refreshEvent(r){
+  const rows=$('#allShifts').checked?(BYEVENT[r.event_id]||[]):[r];
+  rows.forEach(x=>{const old=document.querySelector(`tr[data-key="${x.key}"]`);if(old)old.replaceWith(rowEl(x));});
+  if(F.camp)render();
+}
+const HEAD=['When','Event','Team','Event type','Visibility','Tags','Location','Contact','Co-hosts','Collaborating campaigns'];
+const closed=new Set(store.get('closed',[]));
+function render(){
+  const y=window.scrollY,shown=ROWS.filter(visible),by={};
+  shown.forEach(r=>(by[value(r,'team')]=by[value(r,'team')]||[]).push(r));
+  const groups=TEAMS.filter(t=>!F.team||(F.team.startsWith('R')?t.region===F.team.slice(1):t.code===F.team)).map(t=>{
+    const rows=by[t.code]||[],ev=new Set(rows.map(r=>r.event_id)).size;
+    const d=h('details',{class:'team'+(rows.length?'':' empty'),style:`--rc:var(--r${t.region})`,open:rows.length>0&&!closed.has(t.code)},
+      h('summary',{},h('span',{class:'code'},t.organizer?t.code:'Region 4'),h('span',{class:'who'},t.organizer||'Distributed, not yet split into 4A / 4B / 4C'),
+        h('span',{class:'n'},rows.length?`${rows.length} shift${rows.length===1?'':'s'} · ${ev} event${ev===1?'':'s'}`:'No shifts in this view')),
+      rows.length?h('div',{class:'wrap'},h('table',{},h('colgroup',{},['when','ev','tm','type','vis','tags','loc','contact','co','camp'].map(c=>h('col',{class:'c-'+c}))),h('thead',{},h('tr',{},HEAD.map(x=>h('th',{},x)))),h('tbody',{},rows.map(rowEl)))):null);
+    d.addEventListener('toggle',()=>{if(!rows.length)return;d.open?closed.delete(t.code):closed.add(t.code);store.set('closed',[...closed]);});
+    return d;});
+  $('#groups').replaceChildren(...groups);
+  $('#count').textContent=`${shown.length} of ${ROWS.length} shifts`;
+  window.scrollTo(0,y);
+}
+
+// ---------- campaign options ----------
+function setOptions(list){PENDING.options=same(list,BASE.campaign_options)?null:list;store.set('pending',PENDING);syncSave();drawOptions();fillCampFilter();render();}
+function drawOptions(){
+  const opts=options();
+  $('#optList').replaceChildren(...(opts.length?opts.map(o=>h('li',{},o,h('button',{class:'link',onclick:()=>setOptions(opts.filter(x=>x!==o))},'Remove'))):[h('li',{class:'none'},'No options yet. Add your first one below.')]));
+  const hosts=[...new Set(ROWS.map(r=>r.host_org).filter(x=>x&&x!==DATA.org_name&&!opts.includes(x)))].sort();
+  $('#sugWrap').hidden=!hosts.length;
+  $('#sug').replaceChildren(...hosts.flatMap((x,i)=>[i?', ':'',h('button',{class:'link',onclick:()=>setOptions([...opts,x])},'+ '+x)]));
+}
+function openOptions(){drawOptions();$('#optDlg').showModal();$('#optNew').focus();}
+$('#btnOpts').onclick=openOptions;
+$('#optClose').onclick=()=>$('#optDlg').close();
+$('#optForm').addEventListener('submit',e=>{e.preventDefault();const v=$('#optNew').value.trim();if(v&&!options().some(o=>o.toLowerCase()===v.toLowerCase()))setOptions([...options(),v]);$('#optNew').value='';$('#optNew').focus();});
+
+// ---------- saving ----------
+function syncSave(){const n=pendingCount();$('#savebar').hidden=!n;document.body.classList.toggle('unsaved',n>0);$('#saveMsg').textContent=`${n} unsaved change${n===1?'':'s'}. Only this browser can see ${n===1?'it':'them'} until you save.`;}
+// Options are merged as "what I added / what I removed" so a teammate's new option is not lost.
+function mergedOptions(base){const theirs=base.campaign_options||[];if(!PENDING.options)return theirs;
+  const before=BASE.campaign_options||[],added=PENDING.options.filter(o=>!before.includes(o)),removed=before.filter(o=>!PENDING.options.includes(o));
+  return [...theirs.filter(o=>!removed.includes(o)&&!added.includes(o)),...added];}
+function snapshot(base){return {saved_at:new Date().toISOString(),campaign_options:mergedOptions(base),edits:layered(base.edits,PENDING.edits)};}
+function adopt(saved){BASE=saved;PENDING={options:null,edits:{}};store.set('saved',saved);store.del('pending');remerge();syncSave();fillCampFilter();render();}
+const b64=s=>{const b=new TextEncoder().encode(s);let o='';b.forEach(c=>o+=String.fromCharCode(c));return btoa(o);};
+const unb64=s=>new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\s/g,'')),c=>c.charCodeAt(0)));
+async function saveToGitHub(token){
+  const api=`https://api.github.com/repos/${REPO.owner}/${REPO.name}/contents/${REPO.path}`;
+  const hd={Authorization:'Bearer '+token,Accept:'application/vnd.github+json'};
+  for(let attempt=0;attempt<2;attempt++){
+    let remote={campaign_options:[],edits:{}},sha;
+    const g=await fetch(api+'?ref='+REPO.branch+'&t='+Date.now(),{headers:hd,cache:'no-store'});
+    if(g.status===401||g.status===403)throw new Error('GitHub did not accept that token. Check it has Contents: Read and write on '+REPO.name+'.');
+    if(g.ok){const j=await g.json();sha=j.sha;try{const p=JSON.parse(unb64(j.content));remote={campaign_options:p.campaign_options||[],edits:p.edits||{}};}catch(e){}}
+    else if(g.status!==404)throw new Error('GitHub answered '+g.status+'. Try again in a minute.');
+    const next=snapshot(remote);   // start from what is on GitHub now so a teammate's save is kept
+    const p=await fetch(api,{method:'PUT',headers:hd,body:JSON.stringify({message:'Update event list edits',branch:REPO.branch,sha,content:b64(JSON.stringify(next,null,1)+'\n')})});
+    if(p.ok)return next;
+    if(p.status===409||p.status===422)continue;   // someone saved in between: reload theirs and retry
+    if(p.status===401||p.status===403||p.status===404)throw new Error('GitHub would not let this token write. It needs Contents: Read and write on '+REPO.name+'.');
+    throw new Error('GitHub answered '+p.status+'. Try again in a minute.');
+  }
+  throw new Error('Someone else was saving at the same time. Try again.');
+}
+$('#repoName').textContent=REPO.owner+'/'+REPO.name;
+$('#btnSave').onclick=async()=>{
+  const token=store.get('token','');
+  if(!token){$('#saveStatus').textContent='';$('#saveStatus').className='status';$('#tok').value='';$('#saveDlg').showModal();return;}
+  $('#btnSave').disabled=true;
+  try{adopt(await saveToGitHub(token));toast('Saved for everyone');}
+  catch(e){$('#tok').value='';$('#saveStatus').textContent=e.message;$('#saveStatus').className='status err';$('#saveDlg').showModal();}
+  $('#btnSave').disabled=false;
+};
+$('#saveGo').onclick=async()=>{
+  const token=$('#tok').value.trim()||store.get('token','');const st=$('#saveStatus');
+  if(!token){st.textContent='Paste a token first.';st.className='status err';return;}
+  st.textContent='Saving…';st.className='status';$('#saveGo').disabled=true;
+  try{const saved=await saveToGitHub(token);store.set('token',token);$('#saveDlg').close();adopt(saved);toast('Saved for everyone');}
+  catch(e){st.textContent=e.message;st.className='status err';}
+  $('#saveGo').disabled=false;
+};
+$('#saveCancel').onclick=()=>$('#saveDlg').close();
+$('#tokForget').onclick=()=>{store.del('token');$('#saveStatus').textContent='Token removed from this browser.';$('#saveStatus').className='status';};
+function download(name,text,type){const a=h('a',{href:URL.createObjectURL(new Blob([text],{type})),download:name});document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);}
+$('#btnFile').onclick=()=>{download('event-edits.json',JSON.stringify(snapshot(BASE),null,1)+'\n','application/json');toast('Upload event-edits.json to the repo to share these changes');};
+$('#btnDiscard').onclick=()=>{PENDING={options:null,edits:{}};store.del('pending');remerge();syncSave();fillCampFilter();render();toast('Unsaved changes discarded');};
+
+// ---------- CSV of the current view ----------
+$('#btnCsv').onclick=()=>{
+  const cols=[['Team',r=>value(r,'team')],['Organizer',r=>TEAM[value(r,'team')].organizer||''],['Date',r=>r.date],['Day',r=>r.day],['Time',r=>r.all_day?'All day':r.time],
+    ['Event name',r=>r.title],['Activity',r=>r.activity],['Event type',r=>r.format],['Visibility',r=>r.visibility],['Tags',r=>r.tags.join('; ')],
+    ['Location',r=>r.location],['City',r=>r.city],['ZIP',r=>r.zip],['Virtual link',r=>r.virtual_url],['Host organization',r=>r.host_org],
+    ['Contact name',r=>r.contact_name],['Contact email',r=>r.contact_email],['Contact phone',r=>r.contact_phone],['Co-hosts',r=>value(r,'cohosts')],
+    ['Collaborating campaigns',r=>value(r,'campaigns').join('; ')],['Shift full',r=>r.full?'Yes':''],['Mobilize link',r=>r.url],['Event ID',r=>r.event_id],['Shift ID',r=>r.timeslot_id]];
+  const q=v=>{v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  const rows=ROWS.filter(visible).sort((a,b)=>TEAMS.indexOf(TEAM[value(a,'team')])-TEAMS.indexOf(TEAM[value(b,'team')])||a.start-b.start);
+  download('mobilize-event-list.csv','﻿'+[cols.map(c=>q(c[0])).join(','),...rows.map(r=>cols.map(c=>q(c[1](r))).join(','))].join('\r\n'),'text/csv');
+};
+
+// ---------- go ----------
+const upd=new Date(DATA.updated).toLocaleString('en-US',{timeZone:TZ,month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+$('#meta').textContent=`${ROWS.length} shifts from ${new Set(ROWS.map(r=>r.event_id)).size} events · updated ${upd} MT, refreshes hourly`;
+$('#contactNote').hidden=!!DATA.has_contacts;
+remerge();fillFilters();syncSave();render();
+})();
+</script>
+</body>
+</html>
