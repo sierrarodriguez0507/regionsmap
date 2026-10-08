@@ -36,7 +36,8 @@ jobs:
         run: |
           git config user.name "turf-finder-bot"
           git config user.email "turf-finder-bot@users.noreply.github.com"
-          git add events.json event-list.json event-list.csv
+          git add events.json
+          if [ -f event-list.json ]; then git add event-list.json event-list.csv; fi
           if git diff --cached --quiet; then
             echo "No changes"
           else

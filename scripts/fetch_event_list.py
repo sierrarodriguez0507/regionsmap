@@ -11,8 +11,9 @@ Outputs (repo root):
 Inputs:
   data.json                    turf + house district boundaries (same file the map uses)
   scripts/co_zip_centroids.json  ZIP -> lat/lng, for events whose address is private
-  event-edits.json             team overrides, co-hosts and collaborating campaigns
-                               saved from the page. This script never rewrites it.
+  event-edits.json             saved from the page: team / contact / co-host / campaign
+                               changes, the dropdown option lists, and events added by
+                               hand (e.g. private events). This script never rewrites it.
 
 Optional: set a MOBILIZE_API_KEY secret to also get event contact info (the
 event owner) and private-visibility events. Mobilize hides both from the
@@ -275,9 +276,13 @@ def build_rows(events, shapes, zips, now):
             "lat": lat, "lng": lng, "hd": hd,
             "virtual_url": e.get("virtual_action_url") or "",
             "host_org": (sponsor.get("name") or "").strip(),
-            "contact_name": (contact.get("name") or "").strip(),
-            "contact_email": (contact.get("email_address") or "").strip(),
-            "contact_phone": (contact.get("phone_number") or "").strip(),
+            # The event owner as Mobilize reports it (needs an API key). The page's
+            # contact dropdown starts here; contact_* below hold the final answer.
+            "api_contact": {
+                "name": (contact.get("name") or "").strip(),
+                "email": (contact.get("email_address") or "").strip(),
+                "phone": (contact.get("phone_number") or "").strip(),
+            },
             "volunteer_hosted": bool(e.get("created_by_volunteer_host")),
             # Mobilize's API has no co-host field. When another organization owns
             # the event and it is only shared onto our feed, list that organization.
@@ -285,6 +290,7 @@ def build_rows(events, shapes, zips, now):
             "url": e.get("browser_url") or "",
             "auto_team": code,
             "auto_why": why,
+            "source": "Mobilize",
         }
         for t in sorted(slots, key=lambda t: t["start_date"]):
             start = datetime.datetime.fromtimestamp(t["start_date"], tz)
@@ -301,21 +307,80 @@ def build_rows(events, shapes, zips, now):
                 all_day=(end - start).total_seconds() >= 23 * 3600,
                 full=bool(t.get("is_full")),
             ))
-    rows.sort(key=lambda r: (r["start"], r["title"], r["timeslot_id"]))
     return rows
 
 
-def apply_edits(rows, edits):
+def build_manual_rows(custom_events, now):
+    """Rows for events added by hand on the page (anything not on the Mobilize feed)."""
+    valid = {t["code"] for t in TEAMS} | {UNASSIGNED["code"]}
+    tz = ZoneInfo("America/Denver")
+    rows = []
+    for eid, ev in (custom_events or {}).items():
+        if not isinstance(ev, dict):
+            continue
+        s = lambda k: str(ev.get(k) or "").strip()
+        virtual = s("format") == "Virtual"
+        city, zipc = s("city"), s("zip")
+        if virtual:
+            place = "Virtual"
+        else:
+            parts = [s("venue"), s("address"), (f"{city}, CO" if city else "") + (f" {zipc}" if zipc else "")]
+            place = " · ".join(p for p in parts if p.strip()) or "No address listed"
+        team = s("team") if s("team") in valid else UNASSIGNED["code"]
+        base = {
+            "event_id": eid, "title": s("title") or "Untitled event", "activity": s("activity"),
+            "format": "Virtual" if virtual else "In person", "visibility": s("visibility") or "Private",
+            "address_visibility": "", "tags": [t for t in ev.get("tags") or [] if isinstance(t, str) and t.strip()],
+            "location": place, "venue": s("venue"), "address": s("address"), "city": city, "state": "" if virtual else "CO",
+            "zip": zipc, "lat": None, "lng": None, "hd": None, "virtual_url": s("virtual_url"),
+            "host_org": s("host_org"), "api_contact": {"name": "", "email": "", "phone": ""},
+            "volunteer_hosted": False, "auto_cohosts": s("cohosts"), "url": s("url"),
+            "auto_team": team, "auto_why": "Added by hand", "source": "Added by hand",
+            "auto_contact": s("contact"),
+            "auto_campaigns": [c for c in ev.get("campaigns") or [] if isinstance(c, str)],
+        }
+        for sh in ev.get("shifts") or []:
+            try:
+                start = datetime.datetime.strptime(f"{sh['date']} {sh['start']}", "%Y-%m-%d %H:%M").replace(tzinfo=tz)
+                end = datetime.datetime.strptime(f"{sh['date']} {sh['end']}", "%Y-%m-%d %H:%M").replace(tzinfo=tz)
+            except Exception:
+                print(f"WARNING: skipping a shift of hand-added event {eid} with a bad date or time: {sh}")
+                continue
+            if end.timestamp() < now:
+                continue
+            rows.append(dict(
+                base, key=f"t{sh.get('id')}", timeslot_id=sh.get("id"),
+                start=int(start.timestamp()), end=int(end.timestamp()),
+                date=start.strftime("%Y-%m-%d"), day=start.strftime("%a"),
+                time=f"{clock(start)} – {clock(end)}", all_day=False, full=False,
+            ))
+    return rows
+
+
+def apply_edits(rows, edits, contact_options):
     """Layer saved edits on top: a shift's own edit beats one made for the whole event."""
     valid = {t["code"] for t in TEAMS} | {UNASSIGNED["code"]}
+    people = {c.get("name"): c for c in contact_options or [] if isinstance(c, dict) and c.get("name")}
     for r in rows:
         merged = dict(edits.get(f"e{r['event_id']}") or {})
         merged.update(edits.get(r["key"]) or {})
         team = merged.get("team")
         r["team"] = team if team in valid else r["auto_team"]
         r["team_edited"] = r["team"] != r["auto_team"]
-        r["campaigns"] = [c for c in merged.get("campaigns") or [] if isinstance(c, str)]
+        camps = merged["campaigns"] if isinstance(merged.get("campaigns"), list) else r.get("auto_campaigns") or []
+        r["campaigns"] = [c for c in camps if isinstance(c, str)]
         r["cohosts"] = merged["cohosts"] if isinstance(merged.get("cohosts"), str) else r["auto_cohosts"]
+        api = r["api_contact"]
+        r.setdefault("auto_contact", api["name"])
+        name = merged["contact"] if isinstance(merged.get("contact"), str) else r["auto_contact"]
+        if name in people:
+            p = people[name]
+            email, phone = str(p.get("email") or ""), str(p.get("phone") or "")
+        elif name and name == api["name"]:
+            email, phone = api["email"], api["phone"]
+        else:
+            email = phone = ""
+        r["contact_name"], r["contact_email"], r["contact_phone"] = name, email, phone
     return rows
 
 
@@ -342,7 +407,8 @@ CSV_COLS = [
     ("Collaborating campaigns", lambda r, T: "; ".join(r["campaigns"])),
     ("Shift full", lambda r, T: "Yes" if r["full"] else ""),
     ("Team set by", lambda r, T: "Changed by hand" if r["team_edited"] else r["auto_why"]),
-    ("Mobilize link", lambda r, T: r["url"]),
+    ("Source", lambda r, T: r["source"]),
+    ("Link", lambda r, T: r["url"]),
     ("Event ID", lambda r, T: r["event_id"]),
     ("Shift ID", lambda r, T: r["timeslot_id"]),
 ]
@@ -372,7 +438,9 @@ def main():
         events = fetch_all()
 
     now = time.time()
-    rows = apply_edits(build_rows(events, shapes, zips, now), saved.get("edits") or {})
+    rows = build_rows(events, shapes, zips, now) + build_manual_rows(saved.get("custom_events"), now)
+    rows.sort(key=lambda r: (r["start"], r["title"], str(r["timeslot_id"])))
+    rows = apply_edits(rows, saved.get("edits") or {}, saved.get("contact_options"))
     teams = TEAMS + [UNASSIGNED]
     out = {
         "updated": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),

@@ -112,6 +112,25 @@ dialog ol{margin:6px 0 10px;padding-left:20px;color:var(--muted);font-size:13px}
 .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
 .status{font-size:12.5px;color:var(--muted);min-height:18px}
 .status.err{color:var(--flag)}
+dialog.wide{width:min(760px,calc(100vw - 32px))}
+.warn{background:var(--warn-bg);color:var(--warn-ink)!important;border-radius:6px;padding:8px 10px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px;margin:10px 0}
+.grid .span2{grid-column:span 2}
+.grid input,.grid select{width:100%}
+fieldset{border:1px solid var(--line);border-radius:8px;margin:12px 0;padding:8px 12px 10px}
+legend{font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:0 4px}
+.shift{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0}
+.shift input[type=date]{width:160px}.shift input[type=time]{width:120px}
+.shift span{color:var(--muted);font-size:13px}
+input[type=date],input[type=time],input[type=url]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-width:0;max-width:100%}
+.checks{display:flex;flex-wrap:wrap;gap:4px 14px}
+.checks label{display:flex;gap:6px;align-items:center;font-size:13px}
+button.danger{color:var(--flag)}
+.tag.manual{color:var(--r2)}
+.contact select{width:100%;margin-bottom:3px}
+.hint{font-size:12.5px;color:var(--muted)}
+.ppl{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px}
+@media (max-width:600px){.grid{grid-template-columns:1fr}.grid .span2{grid-column:auto}.ppl{grid-template-columns:1fr}}
 #toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--brand);color:#fff;padding:9px 14px;border-radius:8px;font-weight:600;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:50;max-width:calc(100vw - 32px)}
 
 @media (max-width:860px){
@@ -155,11 +174,13 @@ dialog ol{margin:6px 0 10px;padding-left:20px;color:var(--muted);font-size:13px}
   <label class="check"><input type="checkbox" id="fForms"> Hide all-day sign-up forms</label>
   <span class="spacer"></span>
   <span class="count" id="count"></span>
+  <button class="primary" id="btnAdd">+ Add an event</button>
   <button id="btnOpts">Campaign options</button>
+  <button id="btnPeople">Contacts</button>
   <button id="btnCsv">Download this view (CSV)</button>
 </section>
 
-<div class="note" id="contactNote" hidden>Contact info is blank because Mobilize only shares event owners with a logged-in API key. Add a <b>MOBILIZE_API_KEY</b> secret to the repo and the next hourly run fills it in.</div>
+<div class="note" id="contactNote" hidden>Mobilize only shares event owners with an API key, so pick each event’s contact from the Contact dropdown. Set up the list of people with the <b>Contacts</b> button.</div>
 
 <main id="groups"></main>
 <div class="savebar" id="savebar" hidden>
@@ -178,6 +199,49 @@ dialog ol{margin:6px 0 10px;padding-left:20px;color:var(--muted);font-size:13px}
   <form class="rowf" id="optForm"><input type="text" id="optNew" placeholder="Add a campaign or organization" autocomplete="off"><button class="primary">Add</button></form>
   <p id="sugWrap" hidden>Hosting events on the feed now: <span id="sug"></span></p>
   <div class="actions"><button id="optClose">Done</button></div>
+</dialog>
+
+<dialog id="pplDlg">
+  <h2>Contacts</h2>
+  <p>These are the people in the Contact dropdown on every row. Saved contacts go into your public GitHub repo, so only add details that are fine to share.</p>
+  <ul class="optlist" id="pplList"></ul>
+  <form id="pplForm"><div class="ppl"><input type="text" id="pName" placeholder="Name *" autocomplete="off" aria-label="Name"><input type="text" id="pEmail" placeholder="Email" autocomplete="off" aria-label="Email"><input type="text" id="pPhone" placeholder="Phone" autocomplete="off" aria-label="Phone"><button class="primary">Add</button></div></form>
+  <p class="hint">Adding a name that is already on the list updates that person’s email and phone.</p>
+  <div class="actions"><button id="pplClose">Done</button></div>
+</dialog>
+
+<dialog id="evDlg" class="wide">
+  <form id="evForm" novalidate>
+    <h2 id="evHead">Add an event</h2>
+    <p class="warn">Events you add are saved to your public GitHub repo, so anyone with the page link can see them. For an event at someone’s home, enter only the city and ZIP.</p>
+    <div class="grid">
+      <label class="field span2"><span>Event name *</span><input type="text" name="title" autocomplete="off"></label>
+      <label class="field"><span>Team *</span><select name="team"></select></label>
+      <label class="field"><span>Activity</span><select name="activity"></select></label>
+      <label class="field"><span>Event type</span><select name="format"><option>In person</option><option>Virtual</option></select></label>
+      <label class="field"><span>Visibility</span><select name="visibility"><option>Private</option><option>Public</option></select></label>
+    </div>
+    <fieldset><legend>Shifts * (one row per date)</legend><div id="shiftRows"></div><button type="button" class="link" id="addShift">+ Add another shift</button></fieldset>
+    <div class="grid" id="fInPerson">
+      <label class="field"><span>Venue</span><input type="text" name="venue" autocomplete="off"></label>
+      <label class="field"><span>Street address (public)</span><input type="text" name="address" autocomplete="off" placeholder="Leave blank for a home"></label>
+      <label class="field"><span>City</span><input type="text" name="city" autocomplete="off"></label>
+      <label class="field"><span>ZIP</span><input type="text" name="zip" inputmode="numeric" maxlength="5" autocomplete="off"></label>
+    </div>
+    <div class="grid" id="fVirtual" hidden>
+      <label class="field span2"><span>Virtual link</span><input type="url" name="virtual_url" autocomplete="off"></label>
+    </div>
+    <div class="grid">
+      <label class="field"><span>Contact</span><select name="contact"></select></label>
+      <label class="field"><span>Tags (comma between)</span><input type="text" name="tags" autocomplete="off"></label>
+      <label class="field"><span>Host organization</span><input type="text" name="host_org" autocomplete="off"></label>
+      <label class="field"><span>Co-hosts</span><input type="text" name="cohosts" autocomplete="off"></label>
+      <label class="field span2"><span>Sign-up or event link</span><input type="url" name="url" autocomplete="off"></label>
+      <div class="field span2"><span>Collaborating campaigns</span><div class="checks" id="evCamps"></div></div>
+    </div>
+    <div class="status" id="evStatus"></div>
+    <div class="actions"><button type="button" class="link danger" id="evDelete" hidden>Delete this event</button><span class="spacer"></span><button type="button" id="evCancel">Cancel</button><button class="primary" type="submit" id="evGo">Add event</button></div>
+  </form>
 </dialog>
 
 <dialog id="saveDlg">
@@ -214,36 +278,73 @@ function h(tag,attrs,...kids){const el=document.createElement(tag);
 let toastT;function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2600);}
 
 // ---------- load ----------
-let DATA,BASE={saved_at:null,campaign_options:[],edits:{}};
+const norm=j=>({saved_at:j.saved_at||null,campaign_options:j.campaign_options||[],contact_options:j.contact_options||[],custom_events:j.custom_events||{},edits:j.edits||{}});
+let DATA,BASE=norm({});
 try{const r=await fetch('event-list.json',{cache:'no-store'});if(!r.ok)throw 0;DATA=await r.json();}
 catch(e){$('#meta').textContent='No events yet';$('#groups').append(h('div',{class:'note',style:'margin:0'},'The event list has not been built yet. On GitHub, open Actions → “Update Mobilize events” → Run workflow, then reload this page in a minute or two.'));return;}
-try{const r=await fetch('event-edits.json',{cache:'no-store'});if(r.ok){const j=await r.json();BASE={saved_at:j.saved_at||null,campaign_options:j.campaign_options||[],edits:j.edits||{}};}}catch(e){}
+try{const r=await fetch('event-edits.json',{cache:'no-store'});if(r.ok)BASE=norm(await r.json());}catch(e){}
 // GitHub Pages takes a minute to republish after a save, so prefer this browser's copy of a newer save.
 const mine=store.get('saved',null);
-if(mine&&mine.saved_at&&(!BASE.saved_at||mine.saved_at>BASE.saved_at))BASE=mine;else store.del('saved');
-let PENDING=store.get('pending',{options:null,edits:{}});
+if(mine&&mine.saved_at&&(!BASE.saved_at||mine.saved_at>BASE.saved_at))BASE=norm(mine);else store.del('saved');
+const freshPending=()=>({options:null,contacts:null,custom:{},edits:{}});
+let PENDING=Object.assign(freshPending(),store.get('pending',{}));
 
 const TEAMS=DATA.teams,TEAM={};TEAMS.forEach(t=>TEAM[t.code]=t);
-const nowS=Date.now()/1000;
-const ROWS=DATA.rows.filter(r=>r.end>=nowS);
-const BYEVENT={};ROWS.forEach(r=>(BYEVENT[r.event_id]=BYEVENT[r.event_id]||[]).push(r));
 const teamName=t=>t.organizer?`${t.code} · ${t.organizer}`:(t.name||t.code);
+const ACTIVITIES=['Canvass','Phone bank','Text bank','Visibility event','Meeting','Training','Community','Town hall','Other'];
+
+// ---------- events added by hand ----------
+function customEvents(){const out={...BASE.custom_events};for(const id in PENDING.custom){if(PENDING.custom[id]==null)delete out[id];else out[id]=PENDING.custom[id];}return out;}
+const pad=n=>String(n).padStart(2,'0');
+function zoned(date,time){   // a Denver wall-clock time -> epoch seconds
+  const [y,m,d]=date.split('-').map(Number),[H,M]=time.split(':').map(Number),want=Date.UTC(y,m-1,d,H,M);
+  const fmt=new Intl.DateTimeFormat('en-US',{timeZone:TZ,hourCycle:'h23',year:'numeric',month:'numeric',day:'numeric',hour:'numeric',minute:'numeric'});
+  let t=want+7*36e5;
+  for(let i=0;i<3;i++){const p={};fmt.formatToParts(new Date(t)).forEach(x=>p[x.type]=+x.value);t+=want-Date.UTC(p.year,p.month-1,p.day,p.hour%24,p.minute);}
+  return Math.round(t/1000);}
+const clock12=hm=>{let [H,M]=hm.split(':').map(Number);const ap=H<12?'AM':'PM';H=H%12||12;return `${H}:${pad(M)} ${ap}`;};
+function manualRows(id,ev){
+  const virtual=ev.format==='Virtual';
+  const place=virtual?'Virtual':([ev.venue,ev.address,(ev.city?ev.city+', CO':'')+(ev.zip?' '+ev.zip:'')].filter(x=>x&&x.trim()).join(' · ')||'No address listed');
+  return (ev.shifts||[]).filter(s=>s.date&&s.start&&s.end).map(s=>({
+    key:'t'+s.id,event_id:id,timeslot_id:s.id,source:'Added by hand',title:ev.title||'Untitled event',activity:ev.activity||'',
+    format:virtual?'Virtual':'In person',visibility:ev.visibility||'Private',tags:ev.tags||[],location:place,
+    venue:ev.venue||'',address:ev.address||'',city:ev.city||'',zip:ev.zip||'',virtual_url:ev.virtual_url||'',url:ev.url||'',
+    host_org:ev.host_org||'',api_contact:{name:'',email:'',phone:''},volunteer_hosted:false,
+    auto_team:TEAM[ev.team]?ev.team:'4',auto_why:'Added by hand',auto_cohosts:ev.cohosts||'',auto_contact:ev.contact||'',auto_campaigns:ev.campaigns||[],
+    start:zoned(s.date,s.start),end:zoned(s.date,s.end),date:s.date,
+    day:new Date(s.date+'T12:00:00Z').toLocaleDateString('en-US',{weekday:'short',timeZone:'UTC'}),
+    time:clock12(s.start)+' – '+clock12(s.end),all_day:false,full:false}));
+}
+let ROWS=[],BYEVENT={};
+function rebuild(){
+  const nowS=Date.now()/1000,custom=customEvents();
+  ROWS=DATA.rows.filter(r=>r.source!=='Added by hand').concat(...Object.entries(custom).map(([id,ev])=>manualRows(id,ev)))
+    .filter(r=>r.end>=nowS).sort((a,b)=>a.start-b.start||a.title.localeCompare(b.title));
+  ROWS.forEach(r=>{if(!r.api_contact)r.api_contact={name:r.contact_name||'',email:r.contact_email||'',phone:r.contact_phone||''};});
+  BYEVENT={};ROWS.forEach(r=>(BYEVENT[r.event_id]=BYEVENT[r.event_id]||[]).push(r));
+}
 
 // ---------- edits ----------
-// An edit is {team, campaigns, cohosts} stored under "e<event id>" (every shift of
-// the event) or "t<shift id>" (one shift). A shift's own edit wins. null removes a field.
+// An edit is {team, contact, campaigns, cohosts} stored under "e<event id>" (every shift
+// of the event) or "t<shift id>" (one shift). A shift's own edit wins. null removes a field.
 function layered(a,b){const out={};for(const k of new Set([...Object.keys(a||{}),...Object.keys(b||{})])){
   const m={...(a||{})[k]};const p=(b||{})[k]||{};for(const f in p){if(p[f]==null)delete m[f];else m[f]=p[f];}
   if(Object.keys(m).length)out[k]=m;}return out;}
 let MERGED={};
 function remerge(){MERGED=layered(BASE.edits,PENDING.edits);}
 const same=(a,b)=>JSON.stringify(a??null)===JSON.stringify(b??null);
-function options(){return PENDING.options||BASE.campaign_options||[];}
-function autoOf(r,f){return f==='team'?r.auto_team:f==='cohosts'?(r.auto_cohosts||''):[];}
+const options=()=>PENDING.options||BASE.campaign_options||[];
+const people=()=>PENDING.contacts||BASE.contact_options||[];
+function autoOf(r,f){return f==='team'?r.auto_team:f==='cohosts'?(r.auto_cohosts||''):f==='contact'?(r.auto_contact??r.api_contact.name??''):(r.auto_campaigns||[]);}
 function value(r,f){const e=MERGED['e'+r.event_id]||{},t=MERGED[r.key]||{};
   let v=t[f]!==undefined?t[f]:e[f];
   if(f==='team'&&!TEAM[v])v=undefined;
   return v!==undefined?v:autoOf(r,f);}
+function contactOf(r){const name=value(r,'contact'),p=people().find(x=>x.name===name);
+  if(p)return {name,email:p.email||'',phone:p.phone||''};
+  if(name&&name===r.api_contact.name)return {...r.api_contact};
+  return {name,email:'',phone:''};}
 function setPending(key,f,v){
   // store only what differs from what is already saved
   const base=(BASE.edits[key]||{})[f];
@@ -251,6 +352,7 @@ function setPending(key,f,v){
   if(same(base,v))delete PENDING.edits[key][f];else PENDING.edits[key][f]=v;
   if(!Object.keys(PENDING.edits[key]).length)delete PENDING.edits[key];
 }
+const persist=()=>{store.set('pending',PENDING);syncSave();};
 function edit(r,f,v){
   const auto=autoOf(r,f);
   if($('#allShifts').checked){
@@ -260,9 +362,9 @@ function edit(r,f,v){
     const ev=(MERGED['e'+r.event_id]||{})[f];
     setPending(r.key,f,same(v,ev!==undefined?ev:auto)?null:v);
   }
-  remerge();store.set('pending',PENDING);syncSave();
+  remerge();persist();
 }
-function pendingCount(){let n=PENDING.options?1:0;for(const k in PENDING.edits)n+=Object.keys(PENDING.edits[k]).length;return n;}
+function pendingCount(){let n=(PENDING.options?1:0)+(PENDING.contacts?1:0)+Object.keys(PENDING.custom).length;for(const k in PENDING.edits)n+=Object.keys(PENDING.edits[k]).length;return n;}
 
 // ---------- filters ----------
 const F=Object.assign({q:'',team:'',date:'all',format:'',act:'',vis:'',camp:'',forms:false},store.get('filters',{}));
@@ -279,7 +381,7 @@ function visible(r){
   if(F.camp==='__any'&&!camps.length)return false;
   if(F.camp==='__none'&&camps.length)return false;
   if(F.camp&&!F.camp.startsWith('__')&&!camps.includes(F.camp))return false;
-  if(F.q){const hay=[r.title,r.city,r.venue,r.host_org,r.activity,r.contact_name,value(r,'cohosts'),...r.tags,...camps].join(' ').toLowerCase();
+  if(F.q){const hay=[r.title,r.city,r.venue,r.host_org,r.activity,r.source,value(r,'contact'),value(r,'cohosts'),...r.tags,...camps].join(' ').toLowerCase();
     if(!F.q.toLowerCase().split(/\s+/).every(w=>hay.includes(w)))return false;}
   return true;
 }
@@ -313,31 +415,49 @@ function campCell(r){
   return h('div',{class:'chips'},
     ...chosen.map(c=>h('span',{class:'chip'},c,h('button',{title:'Remove '+c,'aria-label':'Remove '+c,onclick:()=>{edit(r,'campaigns',chosen.filter(x=>x!==c));refreshEvent(r);}},'×'))),add);
 }
+// The choices for a Contact dropdown: no one, the Mobilize owner (if known), your list.
+function contactOptions(current,api){
+  const list=people().map(p=>p.name),opts=[h('option',{value:''},'No contact')];
+  if(api&&!list.includes(api))opts.push(h('option',{value:api},api+' (Mobilize)'));
+  if(current&&current!==api&&!list.includes(current))opts.push(h('option',{value:current},current+' (removed from list)'));
+  list.forEach(n=>opts.push(h('option',{value:n},n)));
+  opts.push(h('option',{value:'__edit'},'Edit contacts…'));
+  opts.forEach(o=>o.selected=o.value===current);
+  return opts;
+}
+function contactCell(r){
+  const c=contactOf(r);
+  const sel=h('select',{'aria-label':'Contact for '+r.title,onchange:e=>{const v=e.target.value;
+      if(v==='__edit'){e.target.value=c.name;openPeople();return;}
+      edit(r,'contact',v);refreshEvent(r);}},contactOptions(c.name,r.api_contact.name));
+  return [sel,c.email&&h('div',{},h('a',{href:'mailto:'+c.email},c.email)),c.phone&&h('div',{},h('a',{href:'tel:'+c.phone},c.phone)),r.volunteer_hosted&&h('div',{class:'sub'},'Volunteer host')];
+}
 function rowEl(r){
-  const team=value(r,'team'),changed=team!==r.auto_team;
+  const team=value(r,'team'),changed=team!==r.auto_team,manual=r.source==='Added by hand';
   const sel=h('select',{'aria-label':'Team for '+r.title,onchange:e=>{edit(r,'team',e.target.value);const n=$('#allShifts').checked?(BYEVENT[r.event_id]||[]).length:1;render();toast(`Moved ${n} shift${n===1?'':'s'} to ${teamName(TEAM[e.target.value])}`);}},
     ...TEAMS.map(t=>h('option',{value:t.code,selected:t.code===team},teamName(t))));
-  const contact=[r.contact_name&&h('div',{},r.contact_name),r.contact_email&&h('div',{},h('a',{href:'mailto:'+r.contact_email},r.contact_email)),r.contact_phone&&h('div',{},h('a',{href:'tel:'+r.contact_phone},r.contact_phone))].filter(Boolean);
   const co=h('input',{type:'text',value:value(r,'cohosts'),placeholder:'Add co-hosts','aria-label':'Co-hosts for '+r.title,onchange:e=>{edit(r,'cohosts',e.target.value.trim());refreshEvent(r);}});
   const d=new Date(r.start*1000);
   return h('tr',{class:changed?'changed':'','data-key':r.key,'data-event':r.event_id},
     h('td',{class:'when','data-label':'When'},h('b',{},fmtDay.format(d)),r.all_day?'All day':r.time),
-    h('td',{class:'ev','data-label':'Event'},r.url?h('a',{href:r.url,target:'_blank',rel:'noopener'},r.title):r.title,
-      h('div',{class:'sub'},r.activity&&h('span',{class:'tag'},r.activity),r.full&&h('span',{class:'tag full'},'Full'),r.host_org&&r.host_org!==DATA.org_name?'Hosted by '+r.host_org:null)),
+    h('td',{class:'ev','data-label':'Event'},r.url?h('a',{href:r.url,target:'_blank',rel:'noopener'},r.title):h('b',{},r.title),
+      h('div',{class:'sub'},manual&&h('span',{class:'tag manual'},'Added by hand'),r.activity&&h('span',{class:'tag'},r.activity),r.full&&h('span',{class:'tag full'},'Full'),
+        r.host_org&&r.host_org!==DATA.org_name?'Hosted by '+r.host_org+' ':null,
+        manual&&h('button',{class:'link',onclick:()=>openEvent(r.event_id)},'Edit event'))),
     h('td',{class:'tm','data-label':'Team'},sel,h('div',{class:'sub'},changed?['Changed by hand (auto: '+r.auto_team+') · ',h('button',{class:'link',onclick:()=>{edit(r,'team',r.auto_team);render();}},'reset')]:r.auto_why)),
     h('td',{'data-label':'Event type'},h('span',{class:'tag'+(r.format==='Virtual'?' virtual':'')},r.format)),
     h('td',{'data-label':'Visibility'},h('span',{class:'tag'+(r.visibility==='Private'?' private':'')},r.visibility)),
     h('td',{'data-label':'Tags'},r.tags.length?r.tags.map(t=>h('span',{class:'tag'},t)):h('span',{class:'dash'},'—')),
     h('td',{class:'loc','data-label':'Location'},r.format==='Virtual'?(r.virtual_url?h('a',{href:r.virtual_url,target:'_blank',rel:'noopener'},'Virtual link'):'Virtual'):r.location),
-    h('td',{class:'contact','data-label':'Contact'},contact.length?contact:h('span',{class:'dash'},'—'),r.volunteer_hosted&&h('div',{class:'sub'},'Volunteer host')),
+    h('td',{class:'contact','data-label':'Contact'},contactCell(r)),
     h('td',{class:'co','data-label':'Co-hosts'},co),
     h('td',{class:'camp','data-label':'Collaborating campaigns'},campCell(r)));
 }
 // Redraw the rows of one event in place (keeps your scroll position and the open groups).
 function refreshEvent(r){
   const rows=$('#allShifts').checked?(BYEVENT[r.event_id]||[]):[r];
-  rows.forEach(x=>{const old=document.querySelector(`tr[data-key="${x.key}"]`);if(old)old.replaceWith(rowEl(x));});
-  if(F.camp)render();
+  rows.forEach(x=>{const old=document.querySelector(`tr[data-key="${CSS.escape(x.key)}"]`);if(old)old.replaceWith(rowEl(x));});
+  if(F.camp||F.q)render();
 }
 const HEAD=['When','Event','Team','Event type','Visibility','Tags','Location','Contact','Co-hosts','Collaborating campaigns'];
 const closed=new Set(store.get('closed',[]));
@@ -354,11 +474,13 @@ function render(){
     return d;});
   $('#groups').replaceChildren(...groups);
   $('#count').textContent=`${shown.length} of ${ROWS.length} shifts`;
+  const nEv=new Set(ROWS.map(r=>r.event_id)).size;
+  $('#meta').textContent=`${ROWS.length} shifts from ${nEv} events · updated ${upd} MT, refreshes hourly`;
   window.scrollTo(0,y);
 }
 
 // ---------- campaign options ----------
-function setOptions(list){PENDING.options=same(list,BASE.campaign_options)?null:list;store.set('pending',PENDING);syncSave();drawOptions();fillCampFilter();render();}
+function setOptions(list){PENDING.options=same(list,BASE.campaign_options)?null:list;persist();drawOptions();fillCampFilter();render();}
 function drawOptions(){
   const opts=options();
   $('#optList').replaceChildren(...(opts.length?opts.map(o=>h('li',{},o,h('button',{class:'link',onclick:()=>setOptions(opts.filter(x=>x!==o))},'Remove'))):[h('li',{class:'none'},'No options yet. Add your first one below.')]));
@@ -371,24 +493,114 @@ $('#btnOpts').onclick=openOptions;
 $('#optClose').onclick=()=>$('#optDlg').close();
 $('#optForm').addEventListener('submit',e=>{e.preventDefault();const v=$('#optNew').value.trim();if(v&&!options().some(o=>o.toLowerCase()===v.toLowerCase()))setOptions([...options(),v]);$('#optNew').value='';$('#optNew').focus();});
 
+// ---------- contacts list ----------
+function setPeople(list){PENDING.contacts=same(list,BASE.contact_options)?null:list;persist();drawPeople();render();if($('#evDlg').open)fillEvContacts($('#evForm').contact.value);}
+function drawPeople(){
+  const list=people();
+  $('#pplList').replaceChildren(...(list.length?list.map(p=>h('li',{},h('span',{},h('b',{},p.name),[p.email,p.phone].filter(Boolean).length?h('div',{class:'sub'},[p.email,p.phone].filter(Boolean).join(' · ')):null),
+    h('button',{class:'link',onclick:()=>setPeople(list.filter(x=>x.name!==p.name))},'Remove'))):[h('li',{class:'none'},'No contacts yet. Add the first one below.')]));
+}
+function openPeople(){drawPeople();$('#pplDlg').showModal();$('#pName').focus();}
+$('#btnPeople').onclick=openPeople;
+$('#pplClose').onclick=()=>$('#pplDlg').close();
+$('#pplForm').addEventListener('submit',e=>{e.preventDefault();
+  const p={name:$('#pName').value.trim(),email:$('#pEmail').value.trim(),phone:$('#pPhone').value.trim()};
+  if(!p.name){$('#pName').focus();return;}
+  const list=people(),i=list.findIndex(x=>x.name.toLowerCase()===p.name.toLowerCase());
+  if(i>=0)p.name=list[i].name;
+  setPeople(i>=0?list.map((x,j)=>j===i?p:x):[...list,p]);
+  ['#pName','#pEmail','#pPhone'].forEach(s=>$(s).value='');$('#pName').focus();});
+
+// ---------- add / edit an event ----------
+const form=$('#evForm');let editing=null;
+const newId=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function shiftRow(s){
+  const row=h('div',{class:'shift','data-id':s.id||''},
+    h('input',{type:'date',value:s.date||'','aria-label':'Date'}),
+    h('input',{type:'time',value:s.start||'','aria-label':'Start time'}),h('span',{},'to'),
+    h('input',{type:'time',value:s.end||'','aria-label':'End time'}),
+    h('button',{type:'button',class:'link danger','aria-label':'Remove this shift',onclick:()=>{if($('#shiftRows').children.length>1)row.remove();}},'Remove'));
+  return row;
+}
+$('#addShift').onclick=()=>{const rows=$('#shiftRows').children,last=rows[rows.length-1];
+  const [d,s,e]=last?[...last.querySelectorAll('input')].map(x=>x.value):['','',''];
+  let next='';if(d){const t=new Date(d+'T12:00:00Z');t.setUTCDate(t.getUTCDate()+7);next=t.toISOString().slice(0,10);}
+  $('#shiftRows').append(shiftRow({date:next,start:s,end:e}));};
+function fillEvContacts(current){form.contact.replaceChildren(...contactOptions(current,''));}
+form.format.onchange=()=>{const v=form.format.value==='Virtual';$('#fInPerson').hidden=v;$('#fVirtual').hidden=!v;};
+function openEvent(id){
+  editing=id||null;
+  const ev=id?customEvents()[id]:null,rows=id?(BYEVENT[id]||[]):[],first=rows[0];
+  $('#evHead').textContent=ev?'Edit event':'Add an event';$('#evGo').textContent=ev?'Save changes':'Add event';$('#evDelete').hidden=!ev;$('#evStatus').textContent='';
+  form.team.replaceChildren(...TEAMS.map(t=>h('option',{value:t.code},teamName(t))));
+  const acts=[...new Set([...ACTIVITIES,...ROWS.map(r=>r.activity).filter(Boolean)])];
+  form.activity.replaceChildren(h('option',{value:''},'—'),...acts.map(a=>h('option',{},a)));
+  const v=ev||{team:F.team&&!F.team.startsWith('R')?F.team:store.get('lastTeam','4'),format:'In person',visibility:'Private',host_org:DATA.org_name};
+  ['title','activity','format','visibility','venue','address','city','zip','virtual_url','host_org','url'].forEach(k=>form[k].value=v[k]||'');
+  form.team.value=first?value(first,'team'):(TEAM[v.team]?v.team:'4');
+  form.tags.value=(v.tags||[]).join(', ');
+  form.cohosts.value=first?value(first,'cohosts'):(v.cohosts||'');
+  fillEvContacts(first?value(first,'contact'):(v.contact||''));
+  const camps=first?value(first,'campaigns'):(v.campaigns||[]);
+  $('#evCamps').replaceChildren(...(options().length?options().map(o=>h('label',{},h('input',{type:'checkbox',value:o,checked:camps.includes(o)}),o)):[h('span',{class:'hint'},'No campaign options yet. Add them with the Campaign options button.')]));
+  const shifts=ev?.shifts?.length?ev.shifts:[{date:dayStr(0),start:'10:00',end:'12:00'}];
+  $('#shiftRows').replaceChildren(...shifts.map(shiftRow));
+  form.format.onchange();
+  $('#evDlg').showModal();form.title.focus();
+}
+$('#btnAdd').onclick=()=>openEvent(null);
+form.addEventListener('input',()=>{$('#evStatus').textContent='';});
+$('#evCancel').onclick=()=>$('#evDlg').close();
+form.addEventListener('submit',e=>{e.preventDefault();const st=$('#evStatus');st.className='status err';
+  const title=form.title.value.trim();if(!title){st.textContent='Give the event a name.';form.title.focus();return;}
+  const shifts=[];
+  for(const row of $('#shiftRows').children){const [d,s,en]=[...row.querySelectorAll('input')].map(x=>x.value);
+    if(!d&&!s&&!en)continue;
+    if(!d||!s||!en){st.textContent='Each shift needs a date, a start time and an end time.';return;}
+    if(en<=s){st.textContent='Each shift has to end after it starts.';return;}
+    shifts.push({id:row.dataset.id||newId('m'),date:d,start:s,end:en});}
+  if(!shifts.length){st.textContent='Add at least one shift.';return;}
+  const virtual=form.format.value==='Virtual',id=editing||newId('c');
+  const ev={title,team:form.team.value,activity:form.activity.value,format:form.format.value,visibility:form.visibility.value,
+    venue:virtual?'':form.venue.value.trim(),address:virtual?'':form.address.value.trim(),city:virtual?'':form.city.value.trim(),zip:virtual?'':form.zip.value.trim(),
+    virtual_url:virtual?form.virtual_url.value.trim():'',url:form.url.value.trim(),host_org:form.host_org.value.trim(),
+    tags:form.tags.value.split(',').map(x=>x.trim()).filter(Boolean),cohosts:form.cohosts.value.trim(),contact:form.contact.value==='__edit'?'':form.contact.value,
+    campaigns:[...$('#evCamps').querySelectorAll('input:checked')].map(x=>x.value),shifts};
+  if(same(BASE.custom_events[id],ev))delete PENDING.custom[id];else PENDING.custom[id]=ev;
+  // The form now holds this event's team, contact, co-hosts and campaigns, so drop row-level changes to them.
+  ['e'+id,...(BYEVENT[id]||[]).map(r=>r.key),...shifts.map(s=>'t'+s.id)].forEach(k=>['team','contact','cohosts','campaigns'].forEach(f=>{if((MERGED[k]||{})[f]!==undefined)setPending(k,f,null);}));
+  store.set('lastTeam',ev.team);remerge();rebuild();persist();fillFilters();render();$('#evDlg').close();
+  toast(`${editing?'Updated':'Added'} “${title}” with ${shifts.length} shift${shifts.length===1?'':'s'} under ${teamName(TEAM[ev.team])}. Save to share it.`);
+});
+form.contact.addEventListener('change',e=>{if(e.target.value==='__edit'){e.target.value='';openPeople();}});
+$('#evDelete').onclick=()=>{if(!editing)return;
+  if(BASE.custom_events[editing])PENDING.custom[editing]=null;else delete PENDING.custom[editing];
+  rebuild();persist();render();$('#evDlg').close();toast('Event deleted. Save to share the change.');};
+
 // ---------- saving ----------
 function syncSave(){const n=pendingCount();$('#savebar').hidden=!n;document.body.classList.toggle('unsaved',n>0);$('#saveMsg').textContent=`${n} unsaved change${n===1?'':'s'}. Only this browser can see ${n===1?'it':'them'} until you save.`;}
-// Options are merged as "what I added / what I removed" so a teammate's new option is not lost.
-function mergedOptions(base){const theirs=base.campaign_options||[];if(!PENDING.options)return theirs;
-  const before=BASE.campaign_options||[],added=PENDING.options.filter(o=>!before.includes(o)),removed=before.filter(o=>!PENDING.options.includes(o));
-  return [...theirs.filter(o=>!removed.includes(o)&&!added.includes(o)),...added];}
-function snapshot(base){return {saved_at:new Date().toISOString(),campaign_options:mergedOptions(base),edits:layered(base.edits,PENDING.edits)};}
-function adopt(saved){BASE=saved;PENDING={options:null,edits:{}};store.set('saved',saved);store.del('pending');remerge();syncSave();fillCampFilter();render();}
+// Lists are merged as "what I added or changed / what I removed" so a teammate's save is not lost.
+function mergeList(theirs,before,mine,key){if(!mine)return theirs;
+  const b=new Map(before.map(x=>[key(x),x])),m=new Set(mine.map(key));
+  const changed=mine.filter(x=>!same(b.get(key(x)),x)),gone=before.map(key).filter(k=>!m.has(k)),ck=new Set(changed.map(key));
+  return [...theirs.filter(x=>!gone.includes(key(x))&&!ck.has(key(x))),...changed];}
+function snapshot(base){
+  const custom={...(base.custom_events||{})};for(const id in PENDING.custom){if(PENDING.custom[id]==null)delete custom[id];else custom[id]=PENDING.custom[id];}
+  return {saved_at:new Date().toISOString(),
+    campaign_options:mergeList(base.campaign_options||[],BASE.campaign_options,PENDING.options,x=>x),
+    contact_options:mergeList(base.contact_options||[],BASE.contact_options,PENDING.contacts,x=>x.name),
+    custom_events:custom,edits:layered(base.edits,PENDING.edits)};}
+function adopt(saved){BASE=norm(saved);PENDING=freshPending();store.set('saved',saved);store.del('pending');remerge();rebuild();syncSave();fillCampFilter();render();}
 const b64=s=>{const b=new TextEncoder().encode(s);let o='';b.forEach(c=>o+=String.fromCharCode(c));return btoa(o);};
 const unb64=s=>new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\s/g,'')),c=>c.charCodeAt(0)));
 async function saveToGitHub(token){
   const api=`https://api.github.com/repos/${REPO.owner}/${REPO.name}/contents/${REPO.path}`;
   const hd={Authorization:'Bearer '+token,Accept:'application/vnd.github+json'};
   for(let attempt=0;attempt<2;attempt++){
-    let remote={campaign_options:[],edits:{}},sha;
+    let remote=norm({}),sha;
     const g=await fetch(api+'?ref='+REPO.branch+'&t='+Date.now(),{headers:hd,cache:'no-store'});
     if(g.status===401||g.status===403)throw new Error('GitHub did not accept that token. Check it has Contents: Read and write on '+REPO.name+'.');
-    if(g.ok){const j=await g.json();sha=j.sha;try{const p=JSON.parse(unb64(j.content));remote={campaign_options:p.campaign_options||[],edits:p.edits||{}};}catch(e){}}
+    if(g.ok){const j=await g.json();sha=j.sha;try{remote=norm(JSON.parse(unb64(j.content)));}catch(e){}}
     else if(g.status!==404)throw new Error('GitHub answered '+g.status+'. Try again in a minute.');
     const next=snapshot(remote);   // start from what is on GitHub now so a teammate's save is kept
     const p=await fetch(api,{method:'PUT',headers:hd,body:JSON.stringify({message:'Update event list edits',branch:REPO.branch,sha,content:b64(JSON.stringify(next,null,1)+'\n')})});
@@ -420,15 +632,15 @@ $('#saveCancel').onclick=()=>$('#saveDlg').close();
 $('#tokForget').onclick=()=>{store.del('token');$('#saveStatus').textContent='Token removed from this browser.';$('#saveStatus').className='status';};
 function download(name,text,type){const a=h('a',{href:URL.createObjectURL(new Blob([text],{type})),download:name});document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);}
 $('#btnFile').onclick=()=>{download('event-edits.json',JSON.stringify(snapshot(BASE),null,1)+'\n','application/json');toast('Upload event-edits.json to the repo to share these changes');};
-$('#btnDiscard').onclick=()=>{PENDING={options:null,edits:{}};store.del('pending');remerge();syncSave();fillCampFilter();render();toast('Unsaved changes discarded');};
+$('#btnDiscard').onclick=()=>{PENDING=freshPending();store.del('pending');remerge();rebuild();syncSave();fillCampFilter();render();toast('Unsaved changes discarded');};
 
 // ---------- CSV of the current view ----------
 $('#btnCsv').onclick=()=>{
   const cols=[['Team',r=>value(r,'team')],['Organizer',r=>TEAM[value(r,'team')].organizer||''],['Date',r=>r.date],['Day',r=>r.day],['Time',r=>r.all_day?'All day':r.time],
     ['Event name',r=>r.title],['Activity',r=>r.activity],['Event type',r=>r.format],['Visibility',r=>r.visibility],['Tags',r=>r.tags.join('; ')],
     ['Location',r=>r.location],['City',r=>r.city],['ZIP',r=>r.zip],['Virtual link',r=>r.virtual_url],['Host organization',r=>r.host_org],
-    ['Contact name',r=>r.contact_name],['Contact email',r=>r.contact_email],['Contact phone',r=>r.contact_phone],['Co-hosts',r=>value(r,'cohosts')],
-    ['Collaborating campaigns',r=>value(r,'campaigns').join('; ')],['Shift full',r=>r.full?'Yes':''],['Mobilize link',r=>r.url],['Event ID',r=>r.event_id],['Shift ID',r=>r.timeslot_id]];
+    ['Contact name',r=>contactOf(r).name],['Contact email',r=>contactOf(r).email],['Contact phone',r=>contactOf(r).phone],['Co-hosts',r=>value(r,'cohosts')],
+    ['Collaborating campaigns',r=>value(r,'campaigns').join('; ')],['Shift full',r=>r.full?'Yes':''],['Source',r=>r.source||'Mobilize'],['Link',r=>r.url],['Event ID',r=>r.event_id],['Shift ID',r=>r.timeslot_id]];
   const q=v=>{v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
   const rows=ROWS.filter(visible).sort((a,b)=>TEAMS.indexOf(TEAM[value(a,'team')])-TEAMS.indexOf(TEAM[value(b,'team')])||a.start-b.start);
   download('mobilize-event-list.csv','﻿'+[cols.map(c=>q(c[0])).join(','),...rows.map(r=>cols.map(c=>q(c[1](r))).join(','))].join('\r\n'),'text/csv');
@@ -436,9 +648,8 @@ $('#btnCsv').onclick=()=>{
 
 // ---------- go ----------
 const upd=new Date(DATA.updated).toLocaleString('en-US',{timeZone:TZ,month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
-$('#meta').textContent=`${ROWS.length} shifts from ${new Set(ROWS.map(r=>r.event_id)).size} events · updated ${upd} MT, refreshes hourly`;
 $('#contactNote').hidden=!!DATA.has_contacts;
-remerge();fillFilters();syncSave();render();
+remerge();rebuild();fillFilters();syncSave();render();
 })();
 </script>
 </body>
