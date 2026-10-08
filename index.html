@@ -708,6 +708,8 @@ body{background:var(--bg);color:var(--ink);font-family:"Montserrat",system-ui,-a
 .side{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line);background:var(--panel)}
 .side-top{padding:18px 18px 16px;display:flex;flex-direction:column;gap:12px;background:var(--brand);color:var(--brand-ink);border-bottom:5px solid var(--sky)}
 .side-top .kicker{color:var(--gold)}
+.evlink{display:inline-block;margin-top:8px;color:var(--gold);font-weight:700;font-size:13.5px;text-decoration:underline;text-underline-offset:3px}
+.evlink:hover{color:#fff}
 .side-top .field label{color:var(--brand-soft)}
 .side-top .hint{color:var(--brand-soft)}
 .side-top input[type=text],.side-top input[type=search]{background:#FFFFFF;color:#14213D;border-color:transparent}
@@ -839,6 +841,7 @@ tbody tr:hover{background:var(--soft)}
       <div>
         <div class="kicker">Colorado field program</div>
         <h1>Colorado Turf Finder</h1>
+        <a class="evlink" href="event-list.html">Mobilize event list by team →</a>
       </div>
       <form class="field" id="addrForm" autocomplete="off">
         <label for="addr">Find an address</label>
