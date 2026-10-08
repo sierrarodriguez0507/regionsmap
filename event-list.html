@@ -166,8 +166,9 @@ button.danger{color:var(--flag)}
 <section class="bar" aria-label="Filters">
   <label class="field grow"><span>Search</span><input type="search" id="q" placeholder="Event, city, tag, host…"></label>
   <label class="field"><span>Team</span><select id="fTeam"></select></label>
-  <label class="field"><span>Dates</span><select id="fDate">
-    <option value="all">All upcoming</option><option value="1">Today</option><option value="7">Next 7 days</option><option value="14">Next 14 days</option><option value="30">Next 30 days</option></select></label>
+  <label class="field"><span>From</span><input type="date" id="fFrom"></label>
+  <label class="field"><span>To</span><input type="date" id="fTo"></label>
+  <button class="link" id="fAllDates" style="padding:7px 0">All dates</button>
   <label class="field"><span>Event type</span><select id="fFormat"><option value="">In person + virtual</option><option>In person</option><option>Virtual</option></select></label>
   <label class="field"><span>Activity</span><select id="fAct"></select></label>
   <label class="field"><span>Visibility</span><select id="fVis"><option value="">Any</option><option>Public</option><option>Private</option></select></label>
@@ -292,6 +293,7 @@ let PENDING=Object.assign(freshPending(),store.get('pending',{}));
 
 const TEAMS=DATA.teams,TEAM={};TEAMS.forEach(t=>TEAM[t.code]=t);
 const teamName=t=>t.organizer?`${t.code} · ${t.organizer}`:(t.name||t.code);
+const regionVar=t=>t.region==='D'?'--r0':'--r'+t.region;
 const ACTIVITIES=['Canvass','Phone bank','Text bank','Visibility event','Meeting','Training','Community','Town hall','Other'];
 
 // ---------- events added by hand ----------
@@ -312,7 +314,7 @@ function manualRows(id,ev){
     format:virtual?'Virtual':'In person',visibility:ev.visibility||'Private',tags:ev.tags||[],location:place,
     venue:ev.venue||'',address:ev.address||'',city:ev.city||'',zip:ev.zip||'',virtual_url:ev.virtual_url||'',url:ev.url||'',
     host_org:ev.host_org||'',api_contact:{name:'',email:'',phone:''},volunteer_hosted:false,
-    auto_team:TEAM[ev.team]?ev.team:'4',auto_why:'Added by hand',auto_cohosts:ev.cohosts||'',auto_contact:ev.contact||'',auto_campaigns:ev.campaigns||[],
+    auto_team:TEAM[ev.team]?ev.team:'D',auto_why:'Added by hand',auto_cohosts:ev.cohosts||'',auto_contact:ev.contact||'',auto_campaigns:ev.campaigns||[],
     start:zoned(s.date,s.start),end:zoned(s.date,s.end),date:s.date,
     day:new Date(s.date+'T12:00:00Z').toLocaleDateString('en-US',{weekday:'short',timeZone:'UTC'}),
     time:clock12(s.start)+' – '+clock12(s.end),all_day:false,full:false}));
@@ -368,14 +370,15 @@ function edit(r,f,v){
 function pendingCount(){let n=(PENDING.options?1:0)+(PENDING.contacts?1:0)+Object.keys(PENDING.custom).length;for(const k in PENDING.edits)n+=Object.keys(PENDING.edits[k]).length;return n;}
 
 // ---------- filters ----------
-const F=Object.assign({q:'',team:'',date:'all',format:'',act:'',vis:'',camp:'',forms:false},store.get('filters',{}));
+const F=Object.assign({q:'',team:'',from:'',to:'',format:'',act:'',vis:'',camp:'',forms:false},store.get('filters',{}));
 function dayStr(offset){const d=new Date(Date.now()+offset*864e5);return new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(d);}
 function visible(r){
   if(F.forms&&r.all_day)return false;
   if(F.format&&r.format!==F.format)return false;
   if(F.act&&r.activity!==F.act)return false;
   if(F.vis&&r.visibility!==F.vis)return false;
-  if(F.date!=='all'&&r.date>dayStr(+F.date-1))return false;
+  if(F.from&&r.date<F.from)return false;
+  if(F.to&&r.date>F.to)return false;
   const team=value(r,'team');
   if(F.team){if(F.team.startsWith('R')){if(TEAM[team].region!==F.team.slice(1))return false;}else if(team!==F.team)return false;}
   const camps=value(r,'campaigns');
@@ -388,19 +391,20 @@ function visible(r){
 }
 function fillFilters(){
   const ft=$('#fTeam');ft.replaceChildren(h('option',{value:''},'All teams'),
-    ...['1','2','3','4'].map(n=>h('option',{value:'R'+n},'Region '+n+' (all)')),
+    ...['1','2','3','4'].map(n=>h('option',{value:'R'+n},'Region '+n+' (all teams)')),
     ...TEAMS.map(t=>h('option',{value:t.code},teamName(t))));
   const acts=[...new Set(ROWS.map(r=>r.activity).filter(Boolean))].sort();
   $('#fAct').replaceChildren(h('option',{value:''},'Any'),...acts.map(a=>h('option',{},a)));
   fillCampFilter();
-  $('#q').value=F.q;ft.value=F.team;$('#fDate').value=F.date;$('#fFormat').value=F.format;$('#fAct').value=F.act;$('#fVis').value=F.vis;$('#fForms').checked=F.forms;
+  $('#q').value=F.q;ft.value=F.team;$('#fFrom').value=F.from;$('#fTo').value=F.to;$('#fFormat').value=F.format;$('#fAct').value=F.act;$('#fVis').value=F.vis;$('#fForms').checked=F.forms;
   [ft,$('#fAct')].forEach(s=>{if(s.selectedIndex<0)s.value='';});
 }
 function fillCampFilter(){const s=$('#fCamp');
   s.replaceChildren(h('option',{value:''},'Any'),h('option',{value:'__any'},'With a campaign'),h('option',{value:'__none'},'None yet'),...options().map(o=>h('option',{value:o},o)));
   s.value=F.camp;if(s.selectedIndex<0){s.value='';F.camp='';}}
-[['#q','q','input'],['#fTeam','team','change'],['#fDate','date','change'],['#fFormat','format','change'],['#fAct','act','change'],['#fVis','vis','change'],['#fCamp','camp','change']]
+[['#q','q','input'],['#fTeam','team','change'],['#fFrom','from','change'],['#fTo','to','change'],['#fFormat','format','change'],['#fAct','act','change'],['#fVis','vis','change'],['#fCamp','camp','change']]
   .forEach(([sel,k,ev])=>$(sel).addEventListener(ev,e=>{F[k]=e.target.value;store.set('filters',F);render();}));
+$('#fAllDates').onclick=()=>{F.from=F.to='';$('#fFrom').value=$('#fTo').value='';store.set('filters',F);render();};
 $('#fForms').addEventListener('change',e=>{F.forms=e.target.checked;store.set('filters',F);render();});
 
 // ---------- rows ----------
@@ -467,8 +471,8 @@ function render(){
   shown.forEach(r=>(by[value(r,'team')]=by[value(r,'team')]||[]).push(r));
   const groups=TEAMS.filter(t=>!F.team||(F.team.startsWith('R')?t.region===F.team.slice(1):t.code===F.team)).map(t=>{
     const rows=by[t.code]||[],ev=new Set(rows.map(r=>r.event_id)).size;
-    const d=h('details',{class:'team'+(rows.length?'':' empty'),style:`--rc:var(--r${t.region})`,open:rows.length>0&&!closed.has(t.code)},
-      h('summary',{},h('span',{class:'code'},t.organizer?t.code:'Region 4'),h('span',{class:'who'},t.organizer||'Distributed, not yet split into 4A / 4B / 4C'),
+    const d=h('details',{class:'team'+(rows.length?'':' empty'),style:`--rc:var(${regionVar(t)})`,open:rows.length>0&&!closed.has(t.code)},
+      h('summary',{},h('span',{class:'code'},t.organizer?t.code:(t.label||t.code)),h('span',{class:'who'},t.organizer||(t.code==='4'?'CD-8, not yet split into 4A / 4B / 4C':t.code==='D'?'Outside regional turf, plus virtual events':'')),
         h('span',{class:'n'},rows.length?`${rows.length} shift${rows.length===1?'':'s'} · ${ev} event${ev===1?'':'s'}`:'No shifts in this view')),
       rows.length?h('div',{class:'wrap'},h('table',{},h('colgroup',{},['when','ev','tm','type','vis','tags','loc','contact','co','camp'].map(c=>h('col',{class:'c-'+c}))),h('thead',{},h('tr',{},HEAD.map(x=>h('th',{},x)))),h('tbody',{},rows.map(rowEl)))):null);
     d.addEventListener('toggle',()=>{if(!rows.length)return;d.open?closed.delete(t.code):closed.add(t.code);store.set('closed',[...closed]);});
@@ -536,9 +540,9 @@ function openEvent(id){
   form.team.replaceChildren(...TEAMS.map(t=>h('option',{value:t.code},teamName(t))));
   const acts=[...new Set([...ACTIVITIES,...ROWS.map(r=>r.activity).filter(Boolean)])];
   form.activity.replaceChildren(h('option',{value:''},'—'),...acts.map(a=>h('option',{},a)));
-  const v=ev||{team:F.team&&!F.team.startsWith('R')?F.team:store.get('lastTeam','4'),format:'In person',visibility:'Private',host_org:DATA.org_name};
+  const v=ev||{team:F.team&&!F.team.startsWith('R')?F.team:store.get('lastTeam','D'),format:'In person',visibility:'Private',host_org:DATA.org_name};
   ['title','activity','format','visibility','venue','address','city','zip','virtual_url','host_org','url'].forEach(k=>form[k].value=v[k]||'');
-  form.team.value=first?value(first,'team'):(TEAM[v.team]?v.team:'4');
+  form.team.value=first?value(first,'team'):(TEAM[v.team]?v.team:'D');
   form.tags.value=(v.tags||[]).join(', ');
   form.cohosts.value=first?value(first,'cohosts'):(v.cohosts||'');
   fillEvContacts(first?value(first,'contact'):(v.contact||''));

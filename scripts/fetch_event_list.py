@@ -48,11 +48,12 @@ TEAMS = [
     {"code": "4B", "region": "4", "organizer": "Sam Heller"},
     {"code": "4C", "region": "4", "organizer": "Mario Quinones Rabelo"},
 ]
-# Everything outside the turf above (CD-8, the rest of the state, virtual
-# events) lands here until someone picks 4A, 4B or 4C in the dropdown.
-UNASSIGNED = {"code": "4", "region": "4", "organizer": "", "name": "Region 4 / Distributed, not yet split"}
-# Map turf names that are not one of the teams above, for the "why" note.
-OTHER_TURF = {"4A-W": "CD-8 Weld", "4A-A": "CD-8 Adams", "4A-L": "CD-8 Larimer", "Dist": "Distributed turf"}
+# Region 4 is CD-8. Events in CD-8 turf land here until someone picks 4A, 4B or 4C.
+UNASSIGNED = {"code": "4", "region": "4", "organizer": "", "label": "Region 4", "name": "Region 4 (CD-8), not yet split"}
+# Everything else (outside regional turf, virtual events with no district hint).
+DISTRIBUTED = {"code": "D", "region": "D", "organizer": "", "label": "Distributed", "name": "Distributed"}
+# Map turf that is not one of the teams above: the CD-8 parts go to Region 4.
+CD8_TURF = {"4A-W": "CD-8 Weld", "4A-A": "CD-8 Adams", "4A-L": "CD-8 Larimer"}
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -144,9 +145,9 @@ def team_at(shapes, lat, lng):
     if hd in HD_TEAM:
         return HD_TEAM[hd], hd, ""
     for t in turfs:
-        if t in OTHER_TURF:
-            return UNASSIGNED["code"], hd, OTHER_TURF[t]
-    return UNASSIGNED["code"], hd, "outside mapped turf"
+        if t in CD8_TURF:
+            return UNASSIGNED["code"], hd, CD8_TURF[t]
+    return DISTRIBUTED["code"], hd, "outside regional turf"
 
 
 def team_for_hd(shapes, hd):
@@ -157,6 +158,8 @@ def team_for_hd(shapes, hd):
     if not share:
         return None
     top = max(share, key=share.get)
+    if top in CD8_TURF:
+        return UNASSIGNED["code"]
     return TURF_TEAM.get(top)
 
 
@@ -196,7 +199,7 @@ def assign(shapes, zips, e):
     if not virtual and city.lower() in shapes["places"]:
         code, hd, note = team_at(shapes, *shapes["places"][city.lower()])
         return code, f"Approximate, from city {city}" + (f", {note}" if note else ""), None, None, hd
-    return UNASSIGNED["code"], ("Virtual event" if virtual else "No address on Mobilize"), None, None, None
+    return DISTRIBUTED["code"], ("Virtual event" if virtual else "No address on Mobilize"), None, None, None
 
 
 # ---------------------------------------------------------------- Mobilize
@@ -312,7 +315,7 @@ def build_rows(events, shapes, zips, now):
 
 def build_manual_rows(custom_events, now):
     """Rows for events added by hand on the page (anything not on the Mobilize feed)."""
-    valid = {t["code"] for t in TEAMS} | {UNASSIGNED["code"]}
+    valid = {t["code"] for t in TEAMS} | {UNASSIGNED["code"], DISTRIBUTED["code"]}
     tz = ZoneInfo("America/Denver")
     rows = []
     for eid, ev in (custom_events or {}).items():
@@ -326,7 +329,7 @@ def build_manual_rows(custom_events, now):
         else:
             parts = [s("venue"), s("address"), (f"{city}, CO" if city else "") + (f" {zipc}" if zipc else "")]
             place = " · ".join(p for p in parts if p.strip()) or "No address listed"
-        team = s("team") if s("team") in valid else UNASSIGNED["code"]
+        team = s("team") if s("team") in valid else DISTRIBUTED["code"]
         base = {
             "event_id": eid, "title": s("title") or "Untitled event", "activity": s("activity"),
             "format": "Virtual" if virtual else "In person", "visibility": s("visibility") or "Private",
@@ -359,7 +362,7 @@ def build_manual_rows(custom_events, now):
 
 def apply_edits(rows, edits, contact_options):
     """Layer saved edits on top: a shift's own edit beats one made for the whole event."""
-    valid = {t["code"] for t in TEAMS} | {UNASSIGNED["code"]}
+    valid = {t["code"] for t in TEAMS} | {UNASSIGNED["code"], DISTRIBUTED["code"]}
     people = {c.get("name"): c for c in contact_options or [] if isinstance(c, dict) and c.get("name")}
     for r in rows:
         merged = dict(edits.get(f"e{r['event_id']}") or {})
@@ -441,7 +444,7 @@ def main():
     rows = build_rows(events, shapes, zips, now) + build_manual_rows(saved.get("custom_events"), now)
     rows.sort(key=lambda r: (r["start"], r["title"], str(r["timeslot_id"])))
     rows = apply_edits(rows, saved.get("edits") or {}, saved.get("contact_options"))
-    teams = TEAMS + [UNASSIGNED]
+    teams = TEAMS + [UNASSIGNED, DISTRIBUTED]
     out = {
         "updated": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
         "org": ORG_ID,
